@@ -1,0 +1,21 @@
+cache:
+  paths:
+    - target
+
+stages:
+  - test
+  - containers
+
+.alpine_before: &alpine_before
+  - apk add libc-dev openssl-dev
+  - rustup component add rustfmt
+
+build-test:
+  stage: test
+  image: rust:1-alpine
+  tags:
+    - avassa-docker
+  before_script:
+    - *alpine_before
+  script:
+    - cargo test
