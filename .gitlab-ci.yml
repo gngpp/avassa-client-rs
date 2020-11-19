@@ -1,17 +1,17 @@
 cache:
   paths:
     - target
-    - containers
 
 stages:
-  - test
+  - build-test
+  - containers
 
 .alpine_before: &alpine_before
   - apk add libc-dev openssl-dev
   - rustup component add rustfmt
 
 build-test:
-  stage: test
+  stage: build-test
   image: rust:1-alpine
   # tags:
   #   - avassa-docker
@@ -22,7 +22,7 @@ build-test:
 
 
 build-container:
-  stage: build
+  stage: build-test
   image: rust:1-alpine
   # tags:
   #   - avassa-docker
@@ -44,7 +44,7 @@ lua-container:
   services:
     - docker:dind
   dependencies:
-    - build:build-container
+    - build-test:build-container
   before_script:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
   variables:
