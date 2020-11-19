@@ -13,8 +13,8 @@ stages:
 build-test:
   stage: test
   image: rust:1-alpine
-  tags:
-    - avassa-docker
+  # tags:
+  #   - avassa-docker
   before_script:
     - *alpine_before
   script:
