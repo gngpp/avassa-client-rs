@@ -29,7 +29,7 @@ build-container:
   before_script:
     - *alpine_before
   script:
-    - cargo build release
+    - cargo build --release
     - find target/release -maxdepth 1 -executable -type f | xargs strip
   artifacts:
     expire_in: 1 day
