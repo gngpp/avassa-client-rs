@@ -1,0 +1,37 @@
+[package]
+name = "avassa-client"
+version = "0.1.0"
+authors = ["Fredrik Jansson <fj@avassa.io>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+chrono = { version = "0.4", features = ["serde"] }
+futures-core = "0.3"
+futures-util = "0.3"
+reqwest = { version="0.10", features = ["json"] }
+serde = { version = "1", features=["derive"] }
+serde_json = { version = "1" }
+thiserror = "1"
+tracing = "0.1"
+tracing-futures = "0.2"
+tokio = { version="0.2", features = ["macros", "sync", "time"] }
+tokio-tungstenite = "0.11"
+tungstenite = "*"
+url = "2"
+
+[dev-dependencies]
+anyhow="1"
+fastping-rs = "0.1"
+http="0.2"
+hyper="0.13"
+lazy_static="1"
+parking_lot = "*"
+prometheus="0.10"
+rlua="*"
+tracing = "0.1"
+tracing-futures = "0.2"
+tracing-subscriber = "0.2"
+tokio = { version="0.2", features = ["full"] }
+warp="0.2"
