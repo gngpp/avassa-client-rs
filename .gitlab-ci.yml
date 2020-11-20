@@ -30,10 +30,8 @@ build-container:
     - *alpine_before
   script:
     - cargo build --release
-    - find target
-    - rm -rf target/release/build/{build,deps,.fingerprint,incremental}
+    - find target/release -maxdepth 1 -executable -type f
     - find target/release -maxdepth 1 -executable -type f | xargs strip
-    - find target
   artifacts:
     expire_in: 1 day
     when: on_success
@@ -55,6 +53,24 @@ lua-container:
   script:
     - find target
     - docker build -t $IMAGE_NAME:$CI_COMMIT_SHA -f lua-runner/Dockerfile .
+    - docker tag $IMAGE_NAME:$CI_COMMIT_SHA $IMAGE_NAME:latest
+    - docker push $IMAGE_NAME:$CI_COMMIT_SHA
+    - docker push $IMAGE_NAME:latest
+
+temperature:
+  stage: containers
+  image: docker:git
+  services:
+    - docker:dind
+  dependencies:
+    - build-container
+  before_script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  variables:
+    IMAGE_NAME: $CI_REGISTRY_IMAGE/temperature
+  script:
+    - find target
+    - docker build -t $IMAGE_NAME:$CI_COMMIT_SHA -f temperature-collector/Dockerfile .
     - docker tag $IMAGE_NAME:$CI_COMMIT_SHA $IMAGE_NAME:latest
     - docker push $IMAGE_NAME:$CI_COMMIT_SHA
     - docker push $IMAGE_NAME:latest
