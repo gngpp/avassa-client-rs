@@ -30,13 +30,15 @@ build-container:
     - *alpine_before
   script:
     - cargo build --release
+    - find target
+    - rm -rf target/release/build/{build,deps,.fingerprint,incremental}
     - find target/release -maxdepth 1 -executable -type f | xargs strip
     - find target
   artifacts:
     expire_in: 1 day
     when: on_success
     paths:
-      - target/release/runner
+      - target/release
       - scripts
 
 lua-container:
@@ -50,7 +52,6 @@ lua-container:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
   variables:
     IMAGE_NAME: $CI_REGISTRY_IMAGE/lua-runner
-    GIT_STRATEGY: none
   script:
     - find target
     - docker build -t $IMAGE_NAME:$CI_COMMIT_SHA -f lua-runner/Dockerfile .

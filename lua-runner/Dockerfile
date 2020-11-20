@@ -1,4 +1,4 @@
 FROM alpine
 
-COPY target/release/runner /usr/local/bin/.
-CMD runner
+COPY target/release/lua-runner /usr/local/bin/.
+CMD lua-runner
