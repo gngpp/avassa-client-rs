@@ -24,13 +24,14 @@ build-test:
 build-container:
   stage: build-test
   image: rust:1-alpine
-  # tags:
-  #   - avassa-docker
+  tags:
+    - avassa-docker
   before_script:
     - *alpine_before
   script:
     - cargo build --release
     - find target/release -maxdepth 1 -executable -type f | xargs strip
+    - find target
   artifacts:
     expire_in: 1 day
     when: on_success
@@ -51,6 +52,7 @@ lua-container:
     IMAGE_NAME: $CI_REGISTRY_IMAGE/lua-runner
     GIT_STRATEGY: none
   script:
+    - find target
     - docker build -t $IMAGE_NAME:$CI_COMMIT_SHA -f lua-runner/Dockerfile .
     - docker tag $IMAGE_NAME:$CI_COMMIT_SHA $IMAGE_NAME:latest
     - docker push $IMAGE_NAME:$CI_COMMIT_SHA
