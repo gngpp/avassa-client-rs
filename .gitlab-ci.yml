@@ -29,6 +29,7 @@ build-container:
   before_script:
     - *alpine_before
   script:
+    - cp -r alpine-cargo /.cargo
     - cargo build --release
     - find target/release -maxdepth 1 -executable -type f
     - find target/release -maxdepth 1 -executable -type f | xargs strip
