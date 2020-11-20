@@ -51,10 +51,9 @@ lua-container:
   variables:
     IMAGE_NAME: $CI_REGISTRY_IMAGE/lua-runner
   script:
-    - find target
     - docker build -t $IMAGE_NAME:$CI_COMMIT_SHA -f lua-runner/Dockerfile .
     - docker tag $IMAGE_NAME:$CI_COMMIT_SHA $IMAGE_NAME:latest
-    - docker push $IMAGE_NAME:$CI_COMMIT_SHA
+    # - docker push $IMAGE_NAME:$CI_COMMIT_SHA
     - docker push $IMAGE_NAME:latest
 
 temperature:
@@ -69,8 +68,7 @@ temperature:
   variables:
     IMAGE_NAME: $CI_REGISTRY_IMAGE/temperature
   script:
-    - find target
     - docker build -t $IMAGE_NAME:$CI_COMMIT_SHA -f temperature-collector/Dockerfile .
     - docker tag $IMAGE_NAME:$CI_COMMIT_SHA $IMAGE_NAME:latest
-    - docker push $IMAGE_NAME:$CI_COMMIT_SHA
+    # - docker push $IMAGE_NAME:$CI_COMMIT_SHA
     - docker push $IMAGE_NAME:latest

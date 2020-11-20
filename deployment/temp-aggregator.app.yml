@@ -1,0 +1,25 @@
+name: temp-aggregator
+services:
+  - name: aggregator
+    containers:
+      - name: aggregator
+        image: "temperature"
+        cmd: ["aggregator"]
+        env:
+          - name: RUST_LOG
+            value: "debug"
+          - name: SUPD
+            value: "http://api:4646"
+    placement:
+      match-host-labels: >
+        name = topdc-1
+    # network:
+    #   external-ip-per-instance:
+    #     ip-versions:
+    #       - ipv4
+    #     protocols:
+    #       - name: tcp
+    #         port-ranges: "9000"
+    mode: replicated
+    replicas: 1
+
