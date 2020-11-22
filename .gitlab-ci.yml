@@ -29,7 +29,7 @@ build-container:
   before_script:
     - *alpine_before
   variables:
-    CARGO_TARGET_DIR:"alpine-target"
+    CARGO_TARGET_DIR: alpine-target
   script:
     # - cp -r alpine-cargo /.cargo
     - cargo build --release
