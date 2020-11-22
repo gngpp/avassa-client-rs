@@ -1,7 +1,9 @@
 //!
 //! Library for producing and consuming Volga messages.
 //!
+use futures_core::Stream;
 use futures_util::{SinkExt, StreamExt};
+use pin_project::pin_project;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tokio_tungstenite::{connect_async, tungstenite::Message as WSMessage};
@@ -104,7 +106,7 @@ async fn get_ok_volga_response(ws: &mut WebSocketStream) -> Result<()> {
     }
 }
 
-/// Volga Consumer options
+/// [`Consumer`] options
 #[derive(Debug)]
 pub struct ConsumerOptions {
     /// Volga general options
@@ -139,7 +141,7 @@ struct VolgaResponse {
     info: Option<String>,
 }
 
-/// Used to create Volga Consumers
+/// [`Consumer`] builder
 pub struct ConsumerBuilder<'a> {
     avassa_client: &'a crate::AvassaClient,
     volga_url: url::Url,
@@ -262,6 +264,7 @@ struct Message {
 }
 
 /// Volga Consumer
+#[pin_project]
 pub struct Consumer {
     ws: WebSocketStream,
     options: ConsumerOptions,
@@ -335,7 +338,24 @@ impl Consumer {
     }
 }
 
-/// Used to create Volga producers
+// impl Stream for Consumer {
+//     type Item = Result<Vec<u8>>;
+
+//     fn poll_next(
+//         self: std::pin::Pin<&mut Self>,
+//         cx: &mut std::task::Context<'_>,
+//     ) -> std::task::Poll<Option<Self::Item>> {
+//         let this = self.project();
+//         match this.ws.poll_next(cx) {
+//             Some(Ok(val)) => {
+//                 todo!()
+//             }
+//             o => return o,
+//         }
+//     }
+// }
+
+/// [`Producer`] builder
 pub struct ProducerBuilder<'a> {
     avassa_client: &'a super::AvassaClient,
     volga_url: url::Url,
@@ -347,10 +367,6 @@ pub struct ProducerBuilder<'a> {
 impl<'a> ProducerBuilder<'a> {
     /// Create new Producer builder
     pub fn new(avassa_client: &'a super::AvassaClient, name: &'a str, topic: &str) -> Result<Self> {
-        // let hp = avassa_client
-        //     .base_url
-        //     .host()
-        //     .ok_or(url::ParseError::EmptyHost)?;
         let hp = "localhost";
         let volga_url = url::Url::parse(&format!("volga://{}/{}", hp, topic,))?;
 
@@ -365,12 +381,12 @@ impl<'a> ProducerBuilder<'a> {
         })
     }
 
-    /// Set Volga `Options`
+    /// Set Volga [`Options`]
     pub fn set_options(self, options: Options) -> Self {
         Self { options, ..self }
     }
 
-    /// Connect and create a `Producer`
+    /// Connect and create a [`Producer`]
     #[tracing::instrument(level = "debug", skip(self))]
     pub async fn connect(self) -> Result<Producer> {
         let request = tungstenite::handshake::client::Request::builder()
@@ -447,7 +463,7 @@ pub enum InfraDirection {
     Stitch,
 }
 
-/// Volga Infra Producer Builder
+/// [`InfraProducer`] builder
 pub struct InfraProducerBuilder<'a> {
     avassa_client: &'a super::AvassaClient,
     topic: String,
@@ -504,7 +520,7 @@ pub struct InfraProducer {
 }
 
 impl InfraProducer {
-    /// Send message over volga
+    /// Send message
     #[tracing::instrument(level = "debug", skip(self))]
     pub async fn produce(&mut self, content: String) -> Result<()> {
         let cmd = json!({

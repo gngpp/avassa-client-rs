@@ -1,6 +1,6 @@
 cache:
   paths:
-    - target
+    - alpine-target
 
 stages:
   - build-test
@@ -28,16 +28,18 @@ build-container:
     - avassa-docker
   before_script:
     - *alpine_before
+  variables:
+    # CARGO_TARGET_DIR:alpine-target
   script:
-    - cp -r alpine-cargo /.cargo
+    # - cp -r alpine-cargo /.cargo
     - cargo build --release
-    - find target/release -maxdepth 1 -executable -type f
-    - find target/release -maxdepth 1 -executable -type f | xargs strip
+    - find alpine-target/release -maxdepth 1 -executable -type f
+    - find alpine-target/release -maxdepth 1 -executable -type f | xargs strip
   artifacts:
     expire_in: 1 day
     when: on_success
     paths:
-      - target/release
+      - alpine-target/release
       - scripts
 
 lua-container:
