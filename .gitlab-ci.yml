@@ -31,7 +31,6 @@ build-container:
   variables:
     CARGO_TARGET_DIR: alpine-target
   script:
-    # - cp -r alpine-cargo /.cargo
     - cargo build --release
     - find alpine-target/release -maxdepth 1 -executable -type f
     - find alpine-target/release -maxdepth 1 -executable -type f | xargs strip

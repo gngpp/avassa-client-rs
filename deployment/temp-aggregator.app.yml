@@ -4,7 +4,7 @@ services:
     containers:
       - name: aggregator
         image: "temperature"
-        cmd: ["aggregator"]
+        cmd: ["temperature-aggregator"]
         env:
           - name: RUST_LOG
             value: "debug"
@@ -13,13 +13,13 @@ services:
     placement:
       match-host-labels: >
         name = topdc-1
-    # network:
-    #   external-ip-per-instance:
-    #     ip-versions:
-    #       - ipv4
-    #     protocols:
-    #       - name: tcp
-    #         port-ranges: "9000"
+    network:
+      external-ip-per-instance:
+        ip-versions:
+          - ipv4
+        protocols:
+          - name: tcp
+            port-ranges: "9000"
     mode: replicated
     replicas: 1
 

@@ -4,7 +4,7 @@ services:
     containers:
       - name: collector
         image: "temperature"
-        cmd: ["collector"]
+        cmd: ["temperature-collector"]
         env:
           - name: RUST_LOG
             value: "debug"
