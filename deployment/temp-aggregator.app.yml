@@ -9,12 +9,12 @@ services:
           - name: RUST_LOG
             value: "debug"
           - name: SUPD
-            value: "http://api:4646"
+            value: "https://api:4646"
     placement:
       match-host-labels: >
         name = topdc-1
     network:
-      external-ip-per-instance:
+      ingress-ip-per-instance:
         ip-versions:
           - ipv4
         protocols:

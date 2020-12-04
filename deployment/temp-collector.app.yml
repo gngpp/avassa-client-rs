@@ -9,7 +9,7 @@ services:
           - name: RUST_LOG
             value: "debug"
           - name: SUPD
-            value: "http://api:4646"
+            value: "https://api:4646"
     mode: replicated
     replicas: 1
  

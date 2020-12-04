@@ -1,7 +1,6 @@
 //!
 //! Library for producing and consuming Volga messages.
 //!
-use futures_core::Stream;
 use futures_util::{SinkExt, StreamExt};
 use pin_project::pin_project;
 use serde::{Deserialize, Serialize};

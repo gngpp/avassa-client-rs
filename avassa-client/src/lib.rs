@@ -8,7 +8,7 @@
 //! async fn main() -> Result<(), avassa_client::Error> {
 //!     use avassa_client::AvassaClient;
 //!
-//!     let client = AvassaClient::login("1.2.3.4", "joe", "secret", "the-company").await?;
+//!     let client = AvassaClient::login("https://1.2.3.4", "joe", "secret", "the-company").await?;
 //!     Ok(())
 //! }
 //! ```
@@ -20,7 +20,7 @@
 //! async fn main() -> Result<(), avassa_client::Error> {
 //!     use avassa_client::AvassaClient;
 //!
-//!     let client = AvassaClient::login("1.2.3.4", "joe", "secret", "the-company").await?;
+//!     let client = AvassaClient::login("https://1.2.3.4", "joe", "secret", "the-company").await?;
 //!
 //!     let builder = client.volga_open_consumer(
 //!         "test-consumer",
@@ -130,6 +130,7 @@ pub struct AvassaClient {
     base_url: url::Url,
     websocket_url: url::Url,
     state: std::sync::Arc<tokio::sync::Mutex<ClientState>>,
+    client: reqwest::Client,
 }
 
 impl AvassaClient {
@@ -176,7 +177,10 @@ impl AvassaClient {
         payload: serde_json::Value,
     ) -> Result<Self> {
         let json = serde_json::to_string(&payload)?;
-        let result = reqwest::Client::new()
+        let client = reqwest::Client::builder()
+            .danger_accept_invalid_certs(true)
+            .build()?;
+        let result = client
             .post(url)
             .header("content-type", "application/json")
             .body(json)
@@ -186,7 +190,7 @@ impl AvassaClient {
         if result.status().is_success() {
             let text = result.text().await?;
             let login_token = serde_json::from_str::<LoginToken>(&text)?;
-            Self::new(base_url, login_token)
+            Self::new(client, base_url, login_token)
         } else {
             let text = result.text().await?;
             debug!("login returned {}", text);
@@ -194,7 +198,7 @@ impl AvassaClient {
         }
     }
 
-    fn new(base_url: url::Url, login_token: LoginToken) -> Result<Self> {
+    fn new(client: reqwest::Client, base_url: url::Url, login_token: LoginToken) -> Result<Self> {
         let token_expires_at = chrono::Local::now() + login_token.expires_in();
         let websocket_url = url::Url::parse(&format!("ws://{}/v1/ws/", base_url.host_port()?))?;
 
@@ -204,6 +208,7 @@ impl AvassaClient {
         };
 
         Ok(Self {
+            client,
             base_url,
             websocket_url,
             state: std::sync::Arc::new(tokio::sync::Mutex::new(state)),
@@ -220,7 +225,8 @@ impl AvassaClient {
 
         let token = self.state.lock().await.login_token.token.clone();
 
-        let mut builder = reqwest::Client::new()
+        let mut builder = self
+            .client
             .get(url)
             .bearer_auth(&token)
             .header("Accept", "application/json");
@@ -254,7 +260,8 @@ impl AvassaClient {
         debug!("POST {} {:?}", url, data);
 
         println!("{}", line!());
-        let result = reqwest::Client::new()
+        let result = self
+            .client
             .post(url)
             .json(&data)
             .bearer_auth(&token)
