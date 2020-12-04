@@ -8,7 +8,9 @@ use serde_json::json;
 use tokio_tungstenite::{connect_async, tungstenite::Message as WSMessage};
 use tracing::{debug, trace};
 
-type WebSocketStream = tokio_tungstenite::WebSocketStream<tokio::net::TcpStream>;
+// type TlsStream = tokio_native_tls::TlsStream<tokio::net::TcpStream>;
+type WebSocketStream =
+    tokio_tungstenite::WebSocketStream<tokio_tungstenite::MaybeTlsStream<tokio::net::TcpStream>>;
 
 const N_IN_AUTO_MORE: usize = 5;
 
