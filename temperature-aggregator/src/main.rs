@@ -169,6 +169,7 @@ async fn run_webserver(state: StateArc) -> anyhow::Result<()> {
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt::init();
+    info!("Build Timestamp: {}", env!("VERGEN_BUILD_TIMESTAMP"));
 
     let avassa = login().await?;
 

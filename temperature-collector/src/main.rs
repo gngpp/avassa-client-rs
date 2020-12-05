@@ -22,6 +22,8 @@ fn building_report(name: &str) -> hvac_common::BuildingReport {
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt::init();
+    info!("Build Timestamp: {}", env!("VERGEN_BUILD_TIMESTAMP"));
+
     let supd = std::env::var("SUPD").expect("Failed to get SUPD");
     let avassa =
         avassa_client::AvassaClient::login(&supd, "joe@acme.com", "verysecret", "acme").await?;
@@ -40,6 +42,7 @@ async fn main() -> anyhow::Result<()> {
         .as_object()
         .expect("Failed to parse dc data");
     let name = dc["name"].as_str().expect("Failed to read name");
+    info!("DC name: {}", name);
 
     let volga_opts = avassa_client::volga::Options {
         persistence: avassa_client::volga::Persistence::RAM,

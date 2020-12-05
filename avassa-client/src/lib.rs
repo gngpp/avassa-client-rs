@@ -38,7 +38,7 @@
 
 use serde::Deserialize;
 use serde_json::json;
-use tracing::{debug, error};
+use tracing::{debug, error, info};
 
 pub mod strongbox;
 pub mod volga;
@@ -100,6 +100,14 @@ pub enum Error {
     /// This error is returned from the REST API
     #[error("REST error {0:?}")]
     REST(RESTErrorList),
+
+    /// TLS Errors
+    #[error("TLS error {0}")]
+    TLS(#[from] native_tls::Error),
+
+    /// IO Errors
+    #[error("IO error {0}")]
+    IO(#[from] std::io::Error),
 }
 
 type Result<T> = std::result::Result<T, Error>;
@@ -327,6 +335,20 @@ impl AvassaClient {
             .set_options(consumer_opts)
             .connect()
             .await
+    }
+
+    pub(crate) async fn open_tls_stream(
+        &self,
+    ) -> Result<tokio_native_tls::TlsStream<tokio::net::TcpStream>> {
+        let connector = native_tls::TlsConnector::builder()
+            .danger_accept_invalid_certs(true)
+            // .danger_accept_invalid_hostnames(true)
+            .build()?;
+        let connector: tokio_native_tls::TlsConnector = connector.into();
+        let addrs = self.websocket_url.socket_addrs(|| None)?;
+        let stream = tokio::net::TcpStream::connect(&*addrs).await?;
+        let stream = connector.connect("fixme.avassa.net:4646", stream).await?;
+        Ok(stream)
     }
 }
 
