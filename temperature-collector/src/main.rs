@@ -1,3 +1,4 @@
+use anyhow::Context;
 use rand::distributions::{Distribution, Uniform};
 use tracing::info;
 
@@ -29,16 +30,15 @@ async fn main() -> anyhow::Result<()> {
         avassa_client::AvassaClient::login(&supd, "joe@acme.com", "verysecret", "acme").await?;
 
     // Find out the name of the DC
-    let supd_dcs = avassa.get_json("/v1/state/datacenters", None).await?;
+    let supd_dcs = avassa
+        .get_json("/v1/state/cluster", None)
+        .await
+        .context("get cluster info")?;
     let dc = supd_dcs
-        .as_array()
-        // Get first dc returned
-        .map(|d| &d[0])
-        .expect("Failed to get datacenter")
         // Convert to an object
         .as_object()
         .expect("Failed to parse dc data");
-    let name = dc["name"].as_str().expect("Failed to read name");
+    let name = dc["cluster-id"].as_str().expect("Failed to read name");
     info!("DC name: {}", name);
 
     let volga_opts = avassa_client::volga::Options {
