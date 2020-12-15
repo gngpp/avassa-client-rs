@@ -5,18 +5,11 @@ use futures_util::{SinkExt, StreamExt};
 use pin_project::pin_project;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use tokio::io::{AsyncRead, AsyncWrite};
-use tokio_tungstenite::{
-    client_async, client_async_tls, connect_async, tungstenite::Message as WSMessage,
-};
-use tracing::{debug, info, trace};
+use tokio_tungstenite::{client_async, tungstenite::Message as WSMessage};
+use tracing::{debug, trace};
 
 type WebSocketStream =
     tokio_tungstenite::WebSocketStream<tokio_native_tls::TlsStream<tokio::net::TcpStream>>;
-// type WebSocketStream =
-//     tokio_tungstenite::WebSocketStream<tokio_tungstenite::MaybeTlsStream<tokio::net::TcpStream>>;
-// type WebSocketStream =
-//     tokio_tungstenite::WebSocketStream<tokio_native_tls::TlsStream<tokio::net::TcpStream>>;
 
 const N_IN_AUTO_MORE: usize = 5;
 
@@ -219,7 +212,6 @@ impl<'a> ConsumerBuilder<'a> {
             )
             .body(())
             .map_err(tungstenite::error::Error::HttpFormat)?;
-        // let (mut ws, _) = connect_async(request).await?;
         let tls = self.avassa_client.open_tls_stream().await?;
         let (mut ws, _) = client_async(request, tls).await?;
 
@@ -407,9 +399,7 @@ impl<'a> ProducerBuilder<'a> {
             .body(())
             .map_err(tungstenite::error::Error::HttpFormat)?;
 
-        // let (mut ws, _) = connect_async(request).await?;
         let tls = self.avassa_client.open_tls_stream().await?;
-        info!("XXXXXXXXXXXXXXXXXXXXXXXXXX");
         let (mut ws, _) = client_async(request, tls).await?;
 
         let cmd = json!({
@@ -506,26 +496,8 @@ impl<'a> InfraProducerBuilder<'a> {
             .body(())
             .map_err(tungstenite::error::Error::HttpFormat)?;
 
-        // let tls = tokio_tungstenite::connect::enc
-
-        // Fixme
-        // let tls_connector = native_tls::TlsConnector::builder()
-        //     .danger_accept_invalid_certs(true)
-        //     .build()
-        //     .unwrap();
-        // let tls_connector: tokio_native_tls::TlsConnector = tls_connector.into();
-        // let stream = tokio::net::TcpStream::connect("192.168.8.51:4646")
-        //     .await
-        //     .unwrap();
-
-        // tls_connector
-        //     .connect("192.168.8.51:4646", stream)
-        //     .await
-        //     .unwrap();
-
         let tls = self.avassa_client.open_tls_stream().await?;
         let (mut ws, _) = client_async(request, tls).await?;
-        let mut ws: WebSocketStream = ws;
 
         let cmd = json!({
             "op": "infra_get_producer_handle",

@@ -29,10 +29,7 @@ async fn main() -> anyhow::Result<()> {
         avassa_client::AvassaClient::login(&supd, "joe@acme.com", "verysecret", "acme").await?;
 
     // Find out the name of the DC
-    let supd_dcs = avassa
-        .get_json("/v1/state/system/datacenters", None)
-        .await?;
-    // let default_name = vec!["unknown-dc".into()];
+    let supd_dcs = avassa.get_json("/v1/state/datacenters", None).await?;
     let dc = supd_dcs
         .as_array()
         // Get first dc returned
