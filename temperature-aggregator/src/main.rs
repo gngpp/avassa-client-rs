@@ -46,8 +46,7 @@ type StateArc = Arc<Mutex<State>>;
 
 async fn login() -> anyhow::Result<avassa_client::AvassaClient> {
     let supd = std::env::var("SUPD").expect("Failed to get SUPD");
-    let client =
-        avassa_client::AvassaClient::login(&supd, "joe@acme.com", "verysecret", "acme").await?;
+    let client = avassa_client::AvassaClient::login(&supd, "joe@acme.com", "verysecret").await?;
     Ok(client)
 }
 

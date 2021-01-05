@@ -130,10 +130,8 @@ impl RunnerLua {
         base_url: String,
         username: String,
         password: String,
-        tenant: String,
     ) -> rlua::Result<AvassaClient> {
-        let client =
-            avassa_client::AvassaClient::login(&base_url, &username, &password, &tenant).await;
+        let client = avassa_client::AvassaClient::login(&base_url, &username, &password).await;
 
         client
             .map(|client| AvassaClient::new(self.rt_handle.clone(), client))
@@ -178,17 +176,6 @@ impl AvassaClient {
     }
 
     #[tracing::instrument(level = "debug", skip(self))]
-    async fn volga_open_infra_producer(
-        &mut self,
-        topic: String,
-    ) -> rlua::Result<volga::InfraProducer> {
-        let prod = self.client.volga_open_infra_producer(&topic).await;
-
-        prod.map(|producer| volga::InfraProducer::new(self.rt_handle.clone(), producer))
-            .map_err(to_lua_error)
-    }
-
-    #[tracing::instrument(level = "debug", skip(self))]
     async fn volga_open_consumer(
         &mut self,
         consumer_name: String,
@@ -203,23 +190,6 @@ impl AvassaClient {
 
         Ok(volga::Consumer::new(self.rt_handle.clone(), consumer))
     }
-
-    #[tracing::instrument(level = "debug", skip(self))]
-    async fn volga_open_infra_consumer(
-        &mut self,
-        consumer_name: String,
-        topic: String,
-    ) -> rlua::Result<volga::Consumer> {
-        todo!()
-        // let builder = self
-        //     .client
-        //     .volga_open_infra_consumer(&consumer_name, &topic)
-        //     .map_err(to_lua_error)?;
-
-        // let consumer = builder.connect().await.map_err(to_lua_error)?;
-
-        // Ok(volga::Consumer::new(self.rt_handle.clone(), consumer))
-    }
 }
 
 impl UserData for AvassaClient {
@@ -233,26 +203,10 @@ impl UserData for AvassaClient {
         );
 
         methods.add_method_mut(
-            "volga_open_infra_producer",
-            |_, this, args: String| -> rlua::Result<volga::InfraProducer> {
-                let rt_handle = this.rt_handle.clone();
-                rt_handle.block_on(this.volga_open_infra_producer(args))
-            },
-        );
-
-        methods.add_method_mut(
             "volga_open_consumer",
             |_, this, args: (String, String)| -> rlua::Result<volga::Consumer> {
                 let rt_handle = this.rt_handle.clone();
                 rt_handle.block_on(this.volga_open_consumer(args.0, args.1))
-            },
-        );
-
-        methods.add_method_mut(
-            "volga_open_infra_consumer",
-            |_, this, args: (String, String)| -> rlua::Result<volga::Consumer> {
-                let rt_handle = this.rt_handle.clone();
-                rt_handle.block_on(this.volga_open_infra_consumer(args.0, args.1))
             },
         );
 
@@ -296,6 +250,18 @@ impl UserData for RunnerLua {
             Ok(())
         });
 
+        // methods.add_method("high_cpu", |_, this, args: usize| {
+        //     let rt_handle = this.rt_handle.clone();
+        //     rt_handle.block_on(async move {
+        //         let cpu_hog = tokio::spawn(async {
+        //             todo!();
+        //         });
+        //         tokio::time::delay_for(std::time::Duration::from_secs(args)).await;
+        //         cpu_hog_tx.send(());
+        //     });
+        //     Ok(())
+        // });
+
         methods.add_method("web_set_content", |_, this, args: (String, u16, String)| {
             this.ws.set_content(args.0, args.1, args.2);
             Ok(())
@@ -305,7 +271,7 @@ impl UserData for RunnerLua {
             "login",
             |_, this, args: (String, String, String, String)| {
                 let rt_handle = this.rt_handle.clone();
-                rt_handle.block_on(this.login(args.0, args.1, args.2, args.3))
+                rt_handle.block_on(this.login(args.0, args.1, args.2))
             },
         );
 

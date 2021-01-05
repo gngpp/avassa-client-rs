@@ -8,7 +8,12 @@
 //! async fn main() -> Result<(), avassa_client::Error> {
 //!     use avassa_client::AvassaClient;
 //!
+//!     // Use login using platform provided application token
+//!     let client = AvassaClient::application_login("https://api.customer.net").await?;
+//!
+//!     // Username and password authentication, good during the development phase
 //!     let client = AvassaClient::login("https://1.2.3.4", "joe", "secret", "the-company").await?;
+//!
 //!     Ok(())
 //! }
 //! ```
@@ -38,7 +43,7 @@
 
 use serde::Deserialize;
 use serde_json::json;
-use tracing::{debug, error, info};
+use tracing::{debug, error};
 
 pub mod strongbox;
 pub mod volga;
@@ -97,7 +102,8 @@ pub enum Error {
     #[error("API Error {0:?}")]
     API(String),
 
-    /// This error is returned from the REST API
+    /// This error is returned from the REST API, this typically means the client did something
+    /// wrong.
     #[error("REST error {0:?}")]
     REST(RESTErrorList),
 
@@ -115,20 +121,19 @@ type Result<T> = std::result::Result<T, Error>;
 #[derive(Debug, Deserialize)]
 pub(crate) struct LoginToken {
     pub token: String,
-    expires_in: i64,
-    pub accessor: String,
-    pub creation_time: chrono::DateTime<chrono::offset::FixedOffset>,
+    expires_in: Option<i64>,
+    pub creation_time: Option<chrono::DateTime<chrono::offset::FixedOffset>>,
 }
 
 impl LoginToken {
-    pub(crate) fn expires_in(&self) -> chrono::Duration {
-        chrono::Duration::seconds(self.expires_in)
+    // Still not clear what to do when a token has expired.
+    pub(crate) fn expires_in(&self) -> Option<chrono::Duration> {
+        self.expires_in.map(chrono::Duration::seconds)
     }
 }
 
 struct ClientState {
     login_token: LoginToken,
-    token_expires_at: chrono::DateTime<chrono::offset::Local>,
 }
 
 /// The `AvassaClient` is used for all interaction with Control Tower or Edge Enforcer instances.
@@ -147,6 +152,8 @@ impl AvassaClient {
     pub async fn application_login(host: &str) -> Result<Self> {
         let secret_id = std::env::var("APPROLE_SECRET_ID")
             .map_err(|_| Error::LoginFailureMissingEnv(String::from("APPROLE_SECRET_ID")))?;
+
+        // If no app role is provided, we can try to use the secret id as app role.
         let role_id = std::env::var("APPROLE_ID").unwrap_or(secret_id.clone());
 
         let base_url = url::Url::parse(host)?;
@@ -159,23 +166,31 @@ impl AvassaClient {
     }
 
     #[tracing::instrument(level = "trace")]
-    /// Login to an avassa Control Tower or Edge Enforcer instance
-    pub async fn login(host: &str, username: &str, password: &str, tenant: &str) -> Result<Self> {
+    /// Login to an avassa Control Tower or Edge Enforcer instance. If possible,
+    /// please use the application_login as no credentials needs to be distributed.
+    pub async fn login(host: &str, username: &str, password: &str) -> Result<Self> {
         let base_url = url::Url::parse(host)?;
         let url = base_url.join("v1/login")?;
 
         // If we have a tenant, send it.
         let data = json!({
             "username":username,
-            "password":password,
-            "tenant":tenant});
+            "password":password
+        });
         Self::do_login(base_url, url, data).await
     }
-
-    /// Returns the login bearer token
-    pub async fn bearer_token(&self) -> String {
-        let state = self.state.lock().await;
-        state.login_token.token.clone()
+    /// If the login token is available through other means.
+    pub fn login_with_token(host: &str, token: &str) -> Result<Self> {
+        let base_url = url::Url::parse(host)?;
+        let client = reqwest::Client::builder()
+            .danger_accept_invalid_certs(true)
+            .build()?;
+        let login_token = LoginToken {
+            token: token.to_string(),
+            expires_in: None,
+            creation_time: None,
+        };
+        Self::new(client, base_url, login_token)
     }
 
     #[tracing::instrument(level = "trace")]
@@ -207,13 +222,9 @@ impl AvassaClient {
     }
 
     fn new(client: reqwest::Client, base_url: url::Url, login_token: LoginToken) -> Result<Self> {
-        let token_expires_at = chrono::Local::now() + login_token.expires_in();
         let websocket_url = url::Url::parse(&format!("ws://{}/v1/ws/", base_url.host_port()?))?;
 
-        let state = ClientState {
-            login_token,
-            token_expires_at,
-        };
+        let state = ClientState { login_token };
 
         Ok(Self {
             client,
@@ -221,6 +232,12 @@ impl AvassaClient {
             websocket_url,
             state: std::sync::Arc::new(tokio::sync::Mutex::new(state)),
         })
+    }
+
+    /// Returns the login bearer token
+    pub async fn bearer_token(&self) -> String {
+        let state = self.state.lock().await;
+        state.login_token.token.clone()
     }
 
     /// GET a json payload from the REST API
@@ -257,7 +274,8 @@ impl AvassaClient {
         }
     }
 
-    pub(crate) async fn post_json(
+    /// POST arbitrary JSON to a path
+    pub async fn post_json(
         &self,
         path: &str,
         data: &serde_json::Value,
@@ -267,7 +285,6 @@ impl AvassaClient {
 
         debug!("POST {} {:?}", url, data);
 
-        println!("{}", line!());
         let result = self
             .client
             .post(url)
@@ -277,7 +294,22 @@ impl AvassaClient {
             .await?;
 
         if result.status().is_success() {
-            let resp = result.json().await?;
+            use std::error::Error;
+            let resp = result.json().await.or_else(|e| match e {
+                e if e.is_decode() => {
+                    match e
+                        .source()
+                        .map(|e| e.downcast_ref::<serde_json::Error>())
+                        .flatten()
+                    {
+                        Some(e) if e.is_eof() => {
+                            Ok(serde_json::Value::Object(serde_json::Map::new()))
+                        }
+                        _ => Err(e),
+                    }
+                }
+                e => Err(e),
+            })?;
             Ok(resp)
         } else {
             error!("POST call failed");
@@ -361,6 +393,7 @@ impl URLExt for url::Url {
         //
         let port = self.port().map(|p| format!(":{}", p)).unwrap_or("".into());
         let host = self.host_str().ok_or(url::ParseError::EmptyHost)?;
+        // Note, the port holds the ":" between the host and the port
         Ok(format!("{}{}", host, port))
     }
 }

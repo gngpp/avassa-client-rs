@@ -1,8 +1,11 @@
 [workspace]
 members = [
   "avassa-client",
+  "elastic",
   "hvac-common",
   "temperature-collector",
   "temperature-aggregator",
+  "stats-aggregator",
   "lua-runner",
+  "dc-seeder",
 ]
