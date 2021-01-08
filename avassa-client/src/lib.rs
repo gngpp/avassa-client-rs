@@ -12,7 +12,7 @@
 //!     let client = AvassaClient::application_login("https://api.customer.net").await?;
 //!
 //!     // Username and password authentication, good during the development phase
-//!     let client = AvassaClient::login("https://1.2.3.4", "joe", "secret", "the-company").await?;
+//!     let client = AvassaClient::login("https://1.2.3.4", "joe", "secret").await?;
 //!
 //!     Ok(())
 //! }
@@ -25,7 +25,7 @@
 //! async fn main() -> Result<(), avassa_client::Error> {
 //!     use avassa_client::AvassaClient;
 //!
-//!     let client = AvassaClient::login("https://1.2.3.4", "joe", "secret", "the-company").await?;
+//!     let client = AvassaClient::login("https://1.2.3.4", "joe", "secret").await?;
 //!
 //!     let builder = client.volga_open_consumer(
 //!         "test-consumer",
