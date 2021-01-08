@@ -6,5 +6,4 @@ members = [
   "temperature-aggregator",
   "stats-aggregator",
   "lua-runner",
-  "dc-seeder",
 ]
