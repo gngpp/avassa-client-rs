@@ -157,7 +157,7 @@ impl AvassaClient {
         let role_id = std::env::var("APPROLE_ID").unwrap_or(secret_id.clone());
 
         let base_url = url::Url::parse(host)?;
-        let url = base_url.join("v1/approle-login")?;
+        let url = base_url.join("v1/approle_login")?;
         let data = json!({
             "role_id": role_id,
             "secret_id": secret_id,

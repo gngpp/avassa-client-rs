@@ -74,7 +74,7 @@ async fn consumer_loop(
     };
 
     loop {
-        info!("Connecting to stats stream");
+        info!("Connecting to stats stream for {}", &dc);
         if let Ok(mut consumer) = avassa
             .volga_open_nat_consumer("stats-aggregator", "tenant-stats", &dc, options)
             .await

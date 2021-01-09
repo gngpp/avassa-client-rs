@@ -2,9 +2,9 @@ name: temperature
 applications:
   - name: temp-collector
     placement:
-      match-dc-labels: >
+      match_dc_labels: >
         type = edge
   - name: temp-aggregator
     placement:
-      match-dc-labels: >
+      match_dc_labels: >
         type = top

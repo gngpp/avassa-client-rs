@@ -11,15 +11,15 @@ services:
           - name: SUPD
             value: "https://api:4646"
     placement:
-      match-host-labels: >
+      match_host_labels: >
         name = topdc-1
     network:
-      ingress-ip-per-instance:
-        ip-versions:
+      ingress_ip_per_instance:
+        ip_versions:
           - ipv4
         protocols:
           - name: tcp
-            port-ranges: "9000"
+            port_ranges: "9000"
     mode: replicated
     replicas: 1
 

@@ -70,10 +70,10 @@ impl SecretStore {
 
         let client = self.client.clone();
         client
-            .post_json(&format!("{}/kv-maps", self.store_url), &create)
+            .post_json(&format!("{}/kv_maps", self.store_url), &create)
             .await?;
 
-        let map_url = format!("{}/kv-maps/{}", self.store_url, name);
+        let map_url = format!("{}/kv_maps/{}", self.store_url, name);
         todo!("get content from sbox");
         Ok(KVMap {
             client,

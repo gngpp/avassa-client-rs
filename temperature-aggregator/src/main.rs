@@ -38,12 +38,6 @@ lazy_static! {
     .unwrap();
 }
 
-struct State {
-    // temperature_gv: prometheus::GaugeVec,
-}
-
-type StateArc = Arc<Mutex<State>>;
-
 async fn login() -> anyhow::Result<avassa_client::AvassaClient> {
     let supd = std::env::var("SUPD").expect("Failed to get SUPD");
     let client = avassa_client::AvassaClient::login(&supd, "joe@acme.com", "verysecret").await?;
@@ -59,11 +53,7 @@ macro_rules! be {
     };
 }
 
-async fn consumer_loop(
-    avassa: &avassa_client::AvassaClient,
-    dc: String,
-    _state: StateArc,
-) -> anyhow::Result<()> {
+async fn consumer_loop(avassa: &avassa_client::AvassaClient, dc: String) -> anyhow::Result<()> {
     let options = avassa_client::volga::Options {
         persistence: avassa_client::volga::Persistence::RAM,
         create: true,
@@ -71,6 +61,7 @@ async fn consumer_loop(
     };
 
     loop {
+        info!("Connecting consumer for {}", &dc);
         if let Ok(mut consumer) = avassa
             .volga_open_nat_consumer("aggregator", "temperatures", &dc, options)
             .await
@@ -80,7 +71,6 @@ async fn consumer_loop(
                 let msg: hvac_common::Message = be!(serde_json::from_slice(&msg));
                 info!("msg: {:#?}", msg);
 
-                // let state = state.lock().await;
                 match msg {
                     hvac_common::Message::TempReport(msg) => {
                         let labels: HashMap<&str, &str> =
@@ -111,13 +101,12 @@ async fn consumer_loop(
     }
 }
 
-async fn start_consumers(avassa: avassa_client::AvassaClient, dcs: &[String], state: StateArc) {
+async fn start_consumers(avassa: avassa_client::AvassaClient, dcs: &[String]) {
     for dc in dcs {
         let avassa = avassa.clone();
         let dc = dc.clone();
-        let state = state.clone();
         tokio::spawn(async move {
-            let _ = consumer_loop(&avassa, dc, state).await;
+            let _ = consumer_loop(&avassa, dc).await;
         });
     }
 }
@@ -135,7 +124,7 @@ async fn prometheus() -> HyperResult {
     Ok(response)
 }
 
-async fn router(_state: StateArc, req: hyper::Request<hyper::Body>) -> HyperResult {
+async fn router(req: hyper::Request<hyper::Body>) -> HyperResult {
     match (req.method(), req.uri().path()) {
         (_, "/metrics") => prometheus().await,
         (m, p) => {
@@ -145,16 +134,11 @@ async fn router(_state: StateArc, req: hyper::Request<hyper::Body>) -> HyperResu
     }
 }
 
-async fn run_webserver(state: StateArc) -> anyhow::Result<()> {
+async fn run_webserver() -> anyhow::Result<()> {
     use hyper::service::{make_service_fn, service_fn};
 
-    let make_svc = make_service_fn(move |_| {
-        let state = state.clone();
-        async move {
-            Ok::<_, GenericError>(service_fn(move |req: Request<Body>| {
-                router(state.clone(), req)
-            }))
-        }
+    let make_svc = make_service_fn(move |_| async move {
+        Ok::<_, GenericError>(service_fn(move |req: Request<Body>| router(req)))
     });
 
     let addr = ([0, 0, 0, 0], 9000).into();
@@ -172,24 +156,6 @@ async fn main() -> anyhow::Result<()> {
 
     let avassa = login().await?;
 
-    // for ss in avassa_client::strongbox::SecretStore::list(&avassa).await? {
-    //     println!("{}", ss);
-    // }
-
-    // let ss =
-    //     avassa_client::strongbox::SecretStore::new_distributed(avassa.clone(), "fredrik").await?;
-    // let kv = ss.kv_map("db").await?;
-    // kv.insert("foo", "bar").await?;
-    // kv.insert("alpha", "beta").await?;
-
-    // println!("foo: {:?}", kv.get("foo").await?);
-    // println!("non-existent: {:?}", kv.get("non-existent").await?);
-
-    // let ss =
-    //     avassa_client::strongbox::SecretStore::new_distributed(avassa.clone(), "fredrik-2").await?;
-
-    // panic!();
-
     let dcs: Vec<String> = avassa
         .get_json("/v1/config/tenants/acme/datacenters", None)
         .await?
@@ -205,9 +171,7 @@ async fn main() -> anyhow::Result<()> {
         .filter(|n| n != "topdc")
         .collect();
 
-    let state = Arc::new(Mutex::new(State {}));
+    start_consumers(avassa.clone(), &dcs).await;
 
-    start_consumers(avassa.clone(), &dcs, state.clone()).await;
-
-    run_webserver(state).await
+    run_webserver().await
 }

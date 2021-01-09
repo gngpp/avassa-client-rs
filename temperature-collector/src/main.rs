@@ -37,7 +37,7 @@ async fn main() -> anyhow::Result<()> {
         // Convert to an object
         .as_object()
         .expect("Failed to parse dc data");
-    let name = dc["cluster-id"].as_str().expect("Failed to read name");
+    let name = dc["cluster_id"].as_str().expect("Failed to read name");
     info!("DC name: {}", name);
 
     let volga_opts = avassa_client::volga::Options {
