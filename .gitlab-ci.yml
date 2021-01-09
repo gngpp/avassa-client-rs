@@ -73,7 +73,7 @@ temperature:
     - docker tag $IMAGE_NAME:$CI_COMMIT_SHA $IMAGE_NAME:latest
     - docker push $IMAGE_NAME:latest
 
-temperature:
+stats-aggregator:
   stage: containers
   image: docker:git
   services:
