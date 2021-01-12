@@ -130,30 +130,30 @@ impl RunnerLua {
         base_url: String,
         username: String,
         password: String,
-    ) -> rlua::Result<AvassaClient> {
-        let client = avassa_client::AvassaClient::login(&base_url, &username, &password).await;
+    ) -> rlua::Result<Client> {
+        let client = avassa_client::Client::login(&base_url, &username, &password).await;
 
         client
-            .map(|client| AvassaClient::new(self.rt_handle.clone(), client))
+            .map(|client| Client::new(self.rt_handle.clone(), client))
             .map_err(to_lua_error)
     }
 
-    async fn application_login(&mut self, base_url: String) -> rlua::Result<AvassaClient> {
-        let client = avassa_client::AvassaClient::application_login(&base_url).await;
+    async fn application_login(&mut self, base_url: String) -> rlua::Result<Client> {
+        let client = avassa_client::Client::application_login(&base_url).await;
 
         client
-            .map(|client| AvassaClient::new(self.rt_handle.clone(), client))
+            .map(|client| Client::new(self.rt_handle.clone(), client))
             .map_err(to_lua_error)
     }
 }
 
-struct AvassaClient {
+struct Client {
     rt_handle: tokio::runtime::Handle,
-    client: std::sync::Arc<avassa_client::AvassaClient>,
+    client: std::sync::Arc<avassa_client::Client>,
 }
 
-impl AvassaClient {
-    fn new(rt_handle: tokio::runtime::Handle, client: avassa_client::AvassaClient) -> Self {
+impl Client {
+    fn new(rt_handle: tokio::runtime::Handle, client: avassa_client::Client) -> Self {
         Self {
             rt_handle,
             client: std::sync::Arc::new(client),
@@ -192,7 +192,7 @@ impl AvassaClient {
     }
 }
 
-impl UserData for AvassaClient {
+impl UserData for Client {
     fn add_methods<'lua, M: UserDataMethods<'lua, Self>>(methods: &mut M) {
         methods.add_method_mut(
             "volga_open_producer",

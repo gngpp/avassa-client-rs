@@ -12,29 +12,14 @@ futures-core = "0.3"
 futures-util = "0.3"
 native-tls = "0.2"
 pin-project = "1"
-reqwest = { version="0.10", features = ["json"] }
+reqwest = { version="0.11", features = ["json"] }
 serde = { version = "1", features=["derive"] }
 serde_json = { version = "1" }
 thiserror = "1"
 tracing = "0.1"
 tracing-futures = "0.2"
-tokio = { version="0.2", features = ["macros", "sync", "time"] }
-tokio-native-tls = "0.1"
-tokio-tungstenite = { version="0.11", features = ["tls"] }
-tungstenite = "*"
+tokio = { version="1", features = ["macros", "sync", "time"] }
+tokio-native-tls = "0.3"
+tokio-tungstenite = { version="0.13", features = ["tls"] }
+tungstenite = "0.12"
 url = "2"
-
-[dev-dependencies]
-anyhow="1"
-fastping-rs = "0.1"
-http="0.2"
-hyper="0.13"
-lazy_static="1"
-parking_lot = "*"
-prometheus="0.10"
-rlua="*"
-tracing = "0.1"
-tracing-futures = "0.2"
-tracing-subscriber = "0.2"
-tokio = { version="0.2", features = ["full"] }
-warp="0.2"

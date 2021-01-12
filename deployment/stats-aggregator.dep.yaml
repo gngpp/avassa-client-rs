@@ -1,0 +1,6 @@
+name: stats-aggregator
+applications:
+  - name: stats-aggregator
+    placement:
+      match_dc_labels: >
+        type = top

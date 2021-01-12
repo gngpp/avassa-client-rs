@@ -1,7 +1,7 @@
 //!
 //! Strongbox clients
 //!
-use crate::AvassaClient;
+use crate::Client;
 use serde_json::json;
 use std::collections::HashMap;
 use tracing::debug;
@@ -12,13 +12,13 @@ const SBOX_SECRETS: &str = "v1/config/strongbox/secrets";
 
 /// A Strobox secret store can contain one or more `KVMap` key value stores.
 pub struct SecretStore {
-    client: AvassaClient,
+    client: Client,
     store_url: String,
 }
 
 impl SecretStore {
     /// List all secret stores
-    pub async fn list(client: &AvassaClient) -> Result<Vec<String>> {
+    pub async fn list(client: &Client) -> Result<Vec<String>> {
         let resp = client
             .get_json(&format!("{}/live", SBOX_SECRETS), Some(&[("keys", "")]))
             .await?;
@@ -35,7 +35,7 @@ impl SecretStore {
             .collect()
     }
 
-    async fn new(client: AvassaClient, name: &str, distribute: bool) -> Result<Self> {
+    async fn new(client: Client, name: &str, distribute: bool) -> Result<Self> {
         let create = json!( {
             "name": name,
             "distribute": distribute,
@@ -52,12 +52,12 @@ impl SecretStore {
 
     /// Creates or openes a new secret store that is distributed to all downstream
     /// data centers
-    pub async fn new_distributed(client: AvassaClient, name: &str) -> Result<Self> {
+    pub async fn new_distributed(client: Client, name: &str) -> Result<Self> {
         Self::new(client, name, true).await
     }
 
     /// Creates or openes a new secret store that is local to this datacenter
-    pub async fn new_local(client: AvassaClient, name: &str) -> Result<Self> {
+    pub async fn new_local(client: Client, name: &str) -> Result<Self> {
         Self::new(client, name, false).await
     }
 
@@ -86,7 +86,7 @@ impl SecretStore {
 
 /// Strongbox key value map
 pub struct KVMap {
-    client: AvassaClient,
+    client: Client,
     map_url: String,
     cache: HashMap<String, String>,
     dirty: bool,

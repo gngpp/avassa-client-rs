@@ -1,0 +1,25 @@
+name: stats-aggregator
+services:
+  - name: aggregator
+    containers:
+      - name: aggregator
+        image: "stats-aggregator"
+        cmd: ["stats-aggregator"]
+        env:
+          - name: RUST_LOG
+            value: "debug"
+          - name: SUPD
+            value: "https://api:4646"
+    placement:
+      match_host_labels: >
+        name = topdc-1
+    network:
+      ingress_ip_per_instance:
+        ip_versions:
+          - ipv4
+        protocols:
+          - name: tcp
+            port_ranges: "9000"
+    mode: replicated
+    replicas: 1
+

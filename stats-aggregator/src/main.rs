@@ -46,9 +46,9 @@ struct State {}
 
 type StateArc = Arc<Mutex<State>>;
 
-async fn login() -> anyhow::Result<avassa_client::AvassaClient> {
+async fn login() -> anyhow::Result<avassa_client::Client> {
     let supd = std::env::var("SUPD").expect("Failed to get SUPD");
-    let client = avassa_client::AvassaClient::login(&supd, "admin@telco.com", "verysecret").await?;
+    let client = avassa_client::Client::login(&supd, "admin@telco.com", "verysecret").await?;
     info!("Successfully logged in");
     Ok(client)
 }
@@ -63,7 +63,7 @@ macro_rules! be {
 }
 
 async fn consumer_loop(
-    avassa: &avassa_client::AvassaClient,
+    avassa: &avassa_client::Client,
     dc: String,
     _state: StateArc,
 ) -> anyhow::Result<()> {
@@ -104,11 +104,11 @@ async fn consumer_loop(
             }
         }
 
-        tokio::time::delay_for(std::time::Duration::from_secs(5)).await;
+        tokio::time::sleep(std::time::Duration::from_secs(5)).await;
     }
 }
 
-async fn start_consumers(avassa: avassa_client::AvassaClient, dcs: &[String], state: StateArc) {
+async fn start_consumers(avassa: avassa_client::Client, dcs: &[String], state: StateArc) {
     for dc in dcs {
         let avassa = avassa.clone();
         let dc = dc.clone();

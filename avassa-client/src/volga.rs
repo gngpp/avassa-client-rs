@@ -143,7 +143,7 @@ struct VolgaResponse {
 
 /// [`Consumer`] builder
 pub struct ConsumerBuilder<'a> {
-    avassa_client: &'a crate::AvassaClient,
+    avassa_client: &'a crate::Client,
     volga_url: url::Url,
     ws_url: url::Url,
     name: String,
@@ -153,11 +153,7 @@ pub struct ConsumerBuilder<'a> {
 /// Created from the Avassa Client.
 impl<'a> ConsumerBuilder<'a> {
     /// Create a Volga Consumer Builder
-    pub(crate) fn new(
-        avassa_client: &'a crate::AvassaClient,
-        name: &str,
-        topic: &str,
-    ) -> Result<Self> {
+    pub(crate) fn new(avassa_client: &'a crate::Client, name: &str, topic: &str) -> Result<Self> {
         // let hp = avassa_client
         //     .base_url
         //     .host()
@@ -178,7 +174,7 @@ impl<'a> ConsumerBuilder<'a> {
 
     /// Create a Volga NAT Consumer Builder
     pub(crate) fn new_nat(
-        avassa_client: &'a crate::AvassaClient,
+        avassa_client: &'a crate::Client,
         name: &str,
         topic: &str,
         udc: &str,
@@ -358,7 +354,7 @@ impl Consumer {
 
 /// [`Producer`] builder
 pub struct ProducerBuilder<'a> {
-    avassa_client: &'a super::AvassaClient,
+    avassa_client: &'a super::Client,
     volga_url: url::Url,
     ws_url: url::Url,
     name: &'a str,
@@ -367,7 +363,7 @@ pub struct ProducerBuilder<'a> {
 
 impl<'a> ProducerBuilder<'a> {
     /// Create new Producer builder
-    pub fn new(avassa_client: &'a super::AvassaClient, name: &'a str, topic: &str) -> Result<Self> {
+    pub fn new(avassa_client: &'a super::Client, name: &'a str, topic: &str) -> Result<Self> {
         let hp = "localhost";
         let volga_url = url::Url::parse(&format!("volga://{}/{}", hp, topic,))?;
 
@@ -467,14 +463,14 @@ pub enum InfraDirection {
 
 /// [`InfraProducer`] builder
 pub struct InfraProducerBuilder<'a> {
-    avassa_client: &'a super::AvassaClient,
+    avassa_client: &'a super::Client,
     topic: String,
     ws_url: url::Url,
 }
 
 impl<'a> InfraProducerBuilder<'a> {
     /// Create a new Volga Infra producer builder
-    pub fn new(avassa_client: &'a super::AvassaClient, topic: &str) -> Result<Self> {
+    pub fn new(avassa_client: &'a super::Client, topic: &str) -> Result<Self> {
         let ws_url = avassa_client.websocket_url.join("volga")?;
 
         Ok(Self {

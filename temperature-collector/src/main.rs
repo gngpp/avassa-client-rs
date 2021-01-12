@@ -26,7 +26,7 @@ async fn main() -> anyhow::Result<()> {
     info!("Build Timestamp: {}", env!("VERGEN_BUILD_TIMESTAMP"));
 
     let supd = std::env::var("SUPD").expect("Failed to get SUPD");
-    let avassa = avassa_client::AvassaClient::login(&supd, "joe@acme.com", "verysecret").await?;
+    let avassa = avassa_client::Client::login(&supd, "joe@acme.com", "verysecret").await?;
 
     // Find out the name of the DC
     let supd_dcs = avassa
@@ -75,7 +75,7 @@ async fn main() -> anyhow::Result<()> {
 
         producer.produce(serde_json::to_string(&report)?).await?;
 
-        tokio::time::delay_for(tokio::time::Duration::from_secs(5)).await;
+        tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
 
         temperature += temp_change.sample(&mut rng);
 

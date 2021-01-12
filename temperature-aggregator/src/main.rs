@@ -1,8 +1,6 @@
 use hyper::{Body, Request, Response, Server};
 use lazy_static::lazy_static;
 use std::collections::HashMap;
-use std::sync::Arc;
-use tokio::sync::Mutex;
 use tracing::{error, info};
 
 type GenericError = Box<dyn std::error::Error + Send + Sync>;
@@ -38,9 +36,9 @@ lazy_static! {
     .unwrap();
 }
 
-async fn login() -> anyhow::Result<avassa_client::AvassaClient> {
+async fn login() -> anyhow::Result<avassa_client::Client> {
     let supd = std::env::var("SUPD").expect("Failed to get SUPD");
-    let client = avassa_client::AvassaClient::login(&supd, "joe@acme.com", "verysecret").await?;
+    let client = avassa_client::Client::login(&supd, "joe@acme.com", "verysecret").await?;
     Ok(client)
 }
 
@@ -53,7 +51,7 @@ macro_rules! be {
     };
 }
 
-async fn consumer_loop(avassa: &avassa_client::AvassaClient, dc: String) -> anyhow::Result<()> {
+async fn consumer_loop(avassa: &avassa_client::Client, dc: String) -> anyhow::Result<()> {
     let options = avassa_client::volga::Options {
         persistence: avassa_client::volga::Persistence::RAM,
         create: true,
@@ -97,11 +95,11 @@ async fn consumer_loop(avassa: &avassa_client::AvassaClient, dc: String) -> anyh
             }
         }
 
-        tokio::time::delay_for(std::time::Duration::from_secs(5)).await;
+        tokio::time::sleep(std::time::Duration::from_secs(5)).await;
     }
 }
 
-async fn start_consumers(avassa: avassa_client::AvassaClient, dcs: &[String]) {
+async fn start_consumers(avassa: avassa_client::Client, dcs: &[String]) {
     for dc in dcs {
         let avassa = avassa.clone();
         let dc = dc.clone();
@@ -151,7 +149,7 @@ async fn run_webserver() -> anyhow::Result<()> {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    tracing_subscriber::fmt::init();
+    // tracing_subscriber::fmt::init();
     info!("Build Timestamp: {}", env!("VERGEN_BUILD_TIMESTAMP"));
 
     let avassa = login().await?;

@@ -64,35 +64,3 @@ impl UserData for Producer {
         });
     }
 }
-
-pub(crate) struct InfraProducer {
-    rt_handle: tokio::runtime::Handle,
-    producer: avassa_client::volga::InfraProducer,
-}
-
-impl InfraProducer {
-    pub(crate) fn new(
-        rt_handle: tokio::runtime::Handle,
-        producer: avassa_client::volga::InfraProducer,
-    ) -> Self {
-        Self {
-            rt_handle,
-            producer,
-        }
-    }
-}
-
-impl UserData for InfraProducer {
-    fn add_methods<'lua, T: UserDataMethods<'lua, Self>>(methods: &mut T) {
-        methods.add_method_mut("produce", |_, this, args: String| {
-            let rt_handle = this.rt_handle.clone();
-
-            rt_handle.block_on(async move {
-                this.producer
-                    .produce(args)
-                    .await
-                    .map_err(|e| rlua::Error::ExternalError(std::sync::Arc::new(e)))
-            })
-        });
-    }
-}

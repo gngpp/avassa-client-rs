@@ -6,13 +6,13 @@
 //! ```no_run
 //! #[tokio::main]
 //! async fn main() -> Result<(), avassa_client::Error> {
-//!     use avassa_client::AvassaClient;
+//!     use avassa_client::Client;
 //!
 //!     // Use login using platform provided application token
-//!     let client = AvassaClient::application_login("https://api.customer.net").await?;
+//!     let client = Client::application_login("https://api.customer.net").await?;
 //!
 //!     // Username and password authentication, good during the development phase
-//!     let client = AvassaClient::login("https://1.2.3.4", "joe", "secret").await?;
+//!     let client = Client::login("https://1.2.3.4", "joe", "secret").await?;
 //!
 //!     Ok(())
 //! }
@@ -23,9 +23,9 @@
 //! ```no_run
 //! #[tokio::main]
 //! async fn main() -> Result<(), avassa_client::Error> {
-//!     use avassa_client::AvassaClient;
+//!     use avassa_client::Client;
 //!
-//!     let client = AvassaClient::login("https://1.2.3.4", "joe", "secret").await?;
+//!     let client = Client::login("https://1.2.3.4", "joe", "secret").await?;
 //!
 //!     let builder = client.volga_open_consumer(
 //!         "test-consumer",
@@ -136,17 +136,17 @@ struct ClientState {
     login_token: LoginToken,
 }
 
-/// The `AvassaClient` is used for all interaction with Control Tower or Edge Enforcer instances.
+/// The `Client` is used for all interaction with Control Tower or Edge Enforcer instances.
 /// Use one of the login functions to create an instance.
 #[derive(Clone)]
-pub struct AvassaClient {
+pub struct Client {
     base_url: url::Url,
     websocket_url: url::Url,
     state: std::sync::Arc<tokio::sync::Mutex<ClientState>>,
     client: reqwest::Client,
 }
 
-impl AvassaClient {
+impl Client {
     #[tracing::instrument(level = "trace")]
     /// Login the application from secret set in the environment
     pub async fn application_login(host: &str) -> Result<Self> {
