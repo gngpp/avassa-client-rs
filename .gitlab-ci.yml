@@ -1,6 +1,6 @@
-cache:
-  paths:
-    - alpine-target
+# cache:
+#   paths:
+#     - alpine-target
 
 stages:
   - build-test
