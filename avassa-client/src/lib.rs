@@ -46,6 +46,8 @@ use serde_json::json;
 use tracing::{debug, error};
 
 pub mod strongbox;
+pub mod types;
+pub mod utilities;
 pub mod volga;
 
 /// Description of an error from the REST APIs
@@ -240,12 +242,12 @@ impl Client {
         state.login_token.token.clone()
     }
 
-    /// GET a json payload from the REST API
-    pub async fn get_json(
+    /// GET a json payload from the REST API.
+    pub async fn get_json<T: serde::de::DeserializeOwned>(
         &self,
         path: &str,
         query_params: Option<&[(&str, &str)]>,
-    ) -> Result<serde_json::Value> {
+    ) -> Result<T> {
         let url = self.base_url.join(path)?;
 
         let token = self.state.lock().await.login_token.token.clone();

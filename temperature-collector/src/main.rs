@@ -26,11 +26,14 @@ async fn main() -> anyhow::Result<()> {
     info!("Build Timestamp: {}", env!("VERGEN_BUILD_TIMESTAMP"));
 
     let supd = std::env::var("SUPD").expect("Failed to get SUPD");
-    let avassa = avassa_client::Client::login(&supd, "joe@acme.com", "verysecret").await?;
+    let avassa = match avassa_client::Client::application_login(&supd).await {
+        Ok(client) => Ok(client),
+        Err(_) => avassa_client::Client::login(&supd, "joe@acme.com", "verysecret").await,
+    }?;
 
     // Find out the name of the DC
     let supd_dcs = avassa
-        .get_json("/v1/state/cluster", None)
+        .get_json::<serde_json::Value>("/v1/state/cluster", None)
         .await
         .context("get cluster info")?;
     let dc = supd_dcs

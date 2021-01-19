@@ -38,8 +38,11 @@ lazy_static! {
 
 async fn login() -> anyhow::Result<avassa_client::Client> {
     let supd = std::env::var("SUPD").expect("Failed to get SUPD");
-    let client = avassa_client::Client::login(&supd, "joe@acme.com", "verysecret").await?;
-    Ok(client)
+    let avassa = match avassa_client::Client::application_login(&supd).await {
+        Ok(client) => Ok(client),
+        Err(_) => avassa_client::Client::login(&supd, "joe@acme.com", "verysecret").await,
+    }?;
+    Ok(avassa)
 }
 
 macro_rules! be {
@@ -155,7 +158,7 @@ async fn main() -> anyhow::Result<()> {
     let avassa = login().await?;
 
     let dcs: Vec<String> = avassa
-        .get_json("/v1/config/tenants/acme/datacenters", None)
+        .get_json::<serde_json::Value>("/v1/config/tenants/acme/datacenters", None)
         .await?
         .as_array()
         .expect("Failed to get DC list")

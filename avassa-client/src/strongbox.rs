@@ -19,7 +19,7 @@ pub struct SecretStore {
 impl SecretStore {
     /// List all secret stores
     pub async fn list(client: &Client) -> Result<Vec<String>> {
-        let resp = client
+        let resp: serde_json::Value = client
             .get_json(&format!("{}/live", SBOX_SECRETS), Some(&[("keys", "")]))
             .await?;
 
