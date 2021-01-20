@@ -1,7 +1,7 @@
 use hyper::{Body, Request, Response, Server};
 use lazy_static::lazy_static;
+use log::{error, info};
 use std::collections::HashMap;
-use tracing::{error, info};
 
 type GenericError = Box<dyn std::error::Error + Send + Sync>;
 type HyperResult = std::result::Result<Response<Body>, GenericError>;
@@ -152,7 +152,7 @@ async fn run_webserver() -> anyhow::Result<()> {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    tracing_subscriber::fmt::init();
+    pretty_env_logger::init();
     info!("Build Timestamp: {}", env!("VERGEN_BUILD_TIMESTAMP"));
 
     let avassa = login().await?;

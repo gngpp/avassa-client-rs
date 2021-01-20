@@ -41,9 +41,9 @@
 
 #![deny(missing_docs)]
 
+use log::{debug, error};
 use serde::Deserialize;
 use serde_json::json;
-use tracing::{debug, error};
 
 pub mod strongbox;
 pub mod types;
@@ -149,7 +149,6 @@ pub struct Client {
 }
 
 impl Client {
-    #[tracing::instrument(level = "trace")]
     /// Login the application from secret set in the environment
     pub async fn application_login(host: &str) -> Result<Self> {
         let secret_id = std::env::var("APPROLE_SECRET_ID")
@@ -167,7 +166,6 @@ impl Client {
         Self::do_login(base_url, url, data).await
     }
 
-    #[tracing::instrument(level = "trace")]
     /// Login to an avassa Control Tower or Edge Enforcer instance. If possible,
     /// please use the application_login as no credentials needs to be distributed.
     pub async fn login(host: &str, username: &str, password: &str) -> Result<Self> {
@@ -195,7 +193,6 @@ impl Client {
         Self::new(client, base_url, login_token)
     }
 
-    #[tracing::instrument(level = "trace")]
     async fn do_login(
         base_url: url::Url,
         url: url::Url,

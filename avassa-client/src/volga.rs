@@ -2,11 +2,11 @@
 //! Library for producing and consuming Volga messages.
 //!
 use futures_util::{SinkExt, StreamExt};
+use log::{debug, trace};
 use pin_project::pin_project;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tokio_tungstenite::{client_async, tungstenite::Message as WSMessage};
-use tracing::{debug, trace};
 
 type WebSocketStream =
     tokio_tungstenite::WebSocketStream<tokio_native_tls::TlsStream<tokio::net::TcpStream>>;
@@ -96,7 +96,6 @@ async fn get_binary_response(ws: &mut WebSocketStream) -> Result<Vec<u8>> {
     }
 }
 
-#[tracing::instrument(level = "debug", skip(ws))]
 async fn get_ok_volga_response(ws: &mut WebSocketStream) -> Result<()> {
     let msg = get_binary_response(ws).await?;
     let resp: VolgaResponse = serde_json::from_slice(&msg)?;
@@ -198,7 +197,6 @@ impl<'a> ConsumerBuilder<'a> {
     }
 
     /// Connect and create a `Consumer`
-    #[tracing::instrument(level = "debug", skip(self))]
     pub async fn connect(self) -> Result<Consumer> {
         let request = tungstenite::handshake::client::Request::builder()
             .uri(self.ws_url.to_string())
@@ -272,7 +270,6 @@ pub struct Consumer {
 impl Consumer {
     /// Indicate the client is ready for n more messages. If auto_more is set in the
     /// options, this is automatically handled.
-    #[tracing::instrument(level = "debug", skip(self))]
     pub async fn more(&mut self, n: usize) -> Result<()> {
         let cmd = json!( {
             "op": "more",
@@ -288,7 +285,6 @@ impl Consumer {
     }
 
     /// Wait for the next message from Volga
-    #[tracing::instrument(level = "debug", skip(self))]
     pub async fn consume(&mut self) -> Result<Vec<u8>> {
         let timeout = std::time::Duration::from_secs(20);
 
@@ -384,7 +380,6 @@ impl<'a> ProducerBuilder<'a> {
     }
 
     /// Connect and create a [`Producer`]
-    #[tracing::instrument(level = "debug", skip(self))]
     pub async fn connect(self) -> Result<Producer> {
         let request = tungstenite::handshake::client::Request::builder()
             .uri(self.ws_url.to_string())
@@ -426,7 +421,6 @@ pub struct Producer {
 }
 impl Producer {
     /// Produce message
-    #[tracing::instrument(level = "debug", skip(self))]
     pub async fn produce(&mut self, content: String) -> Result<()> {
         let cmd = json!({
             "op": "produce",
@@ -481,7 +475,6 @@ impl<'a> InfraProducerBuilder<'a> {
     }
 
     /// Try to connect and create the producer
-    #[tracing::instrument(level = "debug", skip(self))]
     pub async fn connect(self) -> Result<InfraProducer> {
         let request = tungstenite::handshake::client::Request::builder()
             .uri(self.ws_url.to_string())
@@ -520,7 +513,6 @@ pub struct InfraProducer {
 
 impl InfraProducer {
     /// Send message
-    #[tracing::instrument(level = "debug", skip(self))]
     pub async fn produce(&mut self, content: String) -> Result<()> {
         let cmd = json!({
             "op": "infra_produce",

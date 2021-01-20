@@ -1,7 +1,7 @@
+use log::{error, info};
 use rlua::{UserData, UserDataMethods};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
-use tracing::{error, info, instrument};
 
 mod volga;
 
@@ -25,7 +25,6 @@ impl<T> FromLuaResult<T> for LUAError<T> {
     }
 }
 
-#[instrument]
 fn ping(host: String, count: u32) -> LUAResult<u32> {
     use fastping_rs::PingResult::{Idle, Receive};
     use fastping_rs::Pinger;
@@ -63,7 +62,6 @@ struct GetResult {
     text: String,
 }
 
-#[tracing::instrument(level = "debug", skip(ctx))]
 fn http_get<'lua>(ctx: rlua::Context<'lua>, url: &str) -> LUAResult<rlua::Table<'lua>> {
     let (table_tx, table_rx) = std::sync::mpsc::channel::<
         std::result::Result<GetResult, Box<dyn std::error::Error + Send>>,
@@ -160,7 +158,6 @@ impl Client {
         }
     }
 
-    #[tracing::instrument(level = "debug", skip(self))]
     async fn volga_open_producer(
         &mut self,
         producer_name: String,
@@ -175,7 +172,6 @@ impl Client {
             .map_err(to_lua_error)
     }
 
-    #[tracing::instrument(level = "debug", skip(self))]
     async fn volga_open_consumer(
         &mut self,
         consumer_name: String,

@@ -1,6 +1,6 @@
 use anyhow::Context;
+use log::info;
 use rand::distributions::{Distribution, Uniform};
-use tracing::info;
 
 const POWER_CONS_PER_FLOOR: f32 = 15.;
 
@@ -22,7 +22,7 @@ fn building_report(name: &str) -> hvac_common::BuildingReport {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    tracing_subscriber::fmt::init();
+    pretty_env_logger::init();
     info!("Build Timestamp: {}", env!("VERGEN_BUILD_TIMESTAMP"));
 
     let supd = std::env::var("SUPD").expect("Failed to get SUPD");

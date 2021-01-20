@@ -1,10 +1,10 @@
 use hyper::{Body, Request, Response, Server};
 use lazy_static::lazy_static;
+use log::{error, info};
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use tracing::{error, info};
 
 #[derive(Debug, Deserialize)]
 struct TenantStats {
@@ -171,7 +171,7 @@ async fn run_webserver(state: StateArc) -> anyhow::Result<()> {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    tracing_subscriber::fmt::init();
+    pretty_env_logger::init();
     info!("Build Timestamp: {}", env!("VERGEN_BUILD_TIMESTAMP"));
 
     let avassa = login().await?;

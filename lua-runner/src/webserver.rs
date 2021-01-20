@@ -1,5 +1,5 @@
+use log::debug;
 use std::collections::HashMap;
-use tracing::debug;
 use warp::{path::FullPath, Filter};
 
 pub(crate) struct WebServer {

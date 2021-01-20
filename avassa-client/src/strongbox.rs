@@ -2,9 +2,9 @@
 //! Strongbox clients
 //!
 use crate::Client;
+use log::debug;
 use serde_json::json;
 use std::collections::HashMap;
-use tracing::debug;
 
 use crate::Result;
 

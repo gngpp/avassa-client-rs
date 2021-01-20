@@ -11,11 +11,11 @@ anyhow = "1"
 avassa-client={ path="../avassa-client" }
 chrono = "0.4"
 hvac-common = { path="../hvac-common" }
+log="0.4"
+pretty_env_logger="0.4"
 rand="0.7"
 serde_json = "1"
 tokio = { version="1", features = ["full"] }
-tracing = "0.1"
-tracing-subscriber = "0.2"
 
 [build-dependencies]
 vergen="3"

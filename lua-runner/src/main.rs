@@ -1,15 +1,13 @@
 use anyhow::{Context, Result};
+use log::debug;
 use rlua::Lua;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
-use tracing::{debug, span, Level};
 
 mod lua;
 mod webserver;
 
 async fn load_script() -> Result<String> {
-    let span = span!(Level::TRACE, "load_script");
-    let _enter = span.enter();
     if let Ok(script) = std::env::var("SCRIPT") {
         return Ok(script);
     } else if let Ok(script_path) = std::env::var("SCRIPT_PATH") {
@@ -45,8 +43,7 @@ async fn load_script() -> Result<String> {
 
 // #[tokio::main]
 fn main() -> Result<()> {
-    tracing_subscriber::fmt::init();
-    // pretty_env_logger::init_timed();
+    pretty_env_logger::init_timed();
     println!("Built: {}", env!("VERGEN_BUILD_TIMESTAMP"));
 
     let lua = Lua::new();

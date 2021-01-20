@@ -18,9 +18,6 @@ rlua = "0.17"
 serde_json = { version = "1" }
 thiserror = "1"
 tokio = { version="0.2", features = ["macros", "net", "rt-threaded", "sync"]}
-tracing = "0.1"
-tracing-futures = "0.2"
-tracing-subscriber = "0.2"
 url = "2"
 avassa-client = { path = "../avassa-client" }
 warp = "0.2"
