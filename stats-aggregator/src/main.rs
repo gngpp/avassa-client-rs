@@ -48,9 +48,12 @@ type StateArc = Arc<Mutex<State>>;
 
 async fn login() -> anyhow::Result<avassa_client::Client> {
     let supd = std::env::var("SUPD").expect("Failed to get SUPD");
-    let client = avassa_client::Client::login(&supd, "admin@telco.com", "verysecret").await?;
+    let avassa = match avassa_client::Client::application_login(&supd).await {
+        Ok(client) => Ok(client),
+        Err(_) => avassa_client::Client::login(&supd, "joe@acme.com", "verysecret").await,
+    }?;
     info!("Successfully logged in");
-    Ok(client)
+    Ok(avassa)
 }
 
 macro_rules! be {
