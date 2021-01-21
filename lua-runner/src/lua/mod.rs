@@ -9,7 +9,7 @@ type LUAError<T> = (Option<T>, Option<String>);
 type LUAResult<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 
 pub fn to_lua_error(e: avassa_client::Error) -> rlua::Error {
-    rlua::Error::ExternalError(std::sync::Arc::new(e))
+    rlua::Error::ExternalError(Arc::new(e))
 }
 
 trait FromLuaResult<T> {
@@ -105,20 +105,20 @@ fn http_get<'lua>(ctx: rlua::Context<'lua>, url: &str) -> LUAResult<rlua::Table<
 }
 
 pub(crate) struct RunnerLua {
-    rt_handle: tokio::runtime::Handle,
+    tokio_rt: Arc<tokio::runtime::Runtime>,
     pub results: Arc<Mutex<HashMap<String, String>>>,
-    ws: std::sync::Arc<crate::webserver::WebServer>,
+    ws: Arc<crate::webserver::WebServer>,
 }
 
 impl RunnerLua {
     pub fn new(
-        ws: std::sync::Arc<crate::webserver::WebServer>,
-        rt_handle: tokio::runtime::Handle,
+        ws: Arc<crate::webserver::WebServer>,
+        tokio_rt: Arc<tokio::runtime::Runtime>,
         results: Arc<Mutex<HashMap<String, String>>>,
     ) -> Self {
         RunnerLua {
             ws,
-            rt_handle,
+            tokio_rt,
             results,
         }
     }
@@ -132,7 +132,7 @@ impl RunnerLua {
         let client = avassa_client::Client::login(&base_url, &username, &password).await;
 
         client
-            .map(|client| Client::new(self.rt_handle.clone(), client))
+            .map(|client| Client::new(self.tokio_rt.clone(), client))
             .map_err(to_lua_error)
     }
 
@@ -140,20 +140,20 @@ impl RunnerLua {
         let client = avassa_client::Client::application_login(&base_url).await;
 
         client
-            .map(|client| Client::new(self.rt_handle.clone(), client))
+            .map(|client| Client::new(self.tokio_rt.clone(), client))
             .map_err(to_lua_error)
     }
 }
 
 struct Client {
-    rt_handle: tokio::runtime::Handle,
+    tokio_rt: Arc<tokio::runtime::Runtime>,
     client: std::sync::Arc<avassa_client::Client>,
 }
 
 impl Client {
-    fn new(rt_handle: tokio::runtime::Handle, client: avassa_client::Client) -> Self {
+    fn new(tokio_rt: Arc<tokio::runtime::Runtime>, client: avassa_client::Client) -> Self {
         Self {
-            rt_handle,
+            tokio_rt,
             client: std::sync::Arc::new(client),
         }
     }
@@ -168,7 +168,7 @@ impl Client {
             .volga_open_producer(&producer_name, &topic, Default::default())
             .await;
 
-        prod.map(|producer| volga::Producer::new(self.rt_handle.clone(), producer))
+        prod.map(|producer| volga::Producer::new(self.tokio_rt.clone(), producer))
             .map_err(to_lua_error)
     }
 
@@ -184,7 +184,7 @@ impl Client {
 
         let consumer = builder.connect().await.map_err(to_lua_error)?;
 
-        Ok(volga::Consumer::new(self.rt_handle.clone(), consumer))
+        Ok(volga::Consumer::new(self.tokio_rt.clone(), consumer))
     }
 }
 
@@ -193,24 +193,24 @@ impl UserData for Client {
         methods.add_method_mut(
             "volga_open_producer",
             |_, this, args: (String, String)| -> rlua::Result<volga::Producer> {
-                let rt_handle = this.rt_handle.clone();
-                rt_handle.block_on(this.volga_open_producer(args.0, args.1))
+                let tokio_rt = this.tokio_rt.clone();
+                tokio_rt.block_on(this.volga_open_producer(args.0, args.1))
             },
         );
 
         methods.add_method_mut(
             "volga_open_consumer",
             |_, this, args: (String, String)| -> rlua::Result<volga::Consumer> {
-                let rt_handle = this.rt_handle.clone();
-                rt_handle.block_on(this.volga_open_consumer(args.0, args.1))
+                let tokio_rt = this.tokio_rt.clone();
+                tokio_rt.block_on(this.volga_open_consumer(args.0, args.1))
             },
         );
 
         methods.add_method(
             "get_json",
             |_, this, args: String| -> rlua::Result<String> {
-                let rt_handle = this.rt_handle.clone();
-                rt_handle.block_on(async move {
+                let tokio_rt = this.tokio_rt.clone();
+                tokio_rt.block_on(async move {
                     let json = this
                         .client
                         .get_json(&args, None)
@@ -247,8 +247,8 @@ impl UserData for RunnerLua {
         });
 
         // methods.add_method("high_cpu", |_, this, args: usize| {
-        //     let rt_handle = this.rt_handle.clone();
-        //     rt_handle.block_on(async move {
+        //     let tokio_rt = this.tokio_rt.clone();
+        //     tokio_rt.block_on(async move {
         //         let cpu_hog = tokio::spawn(async {
         //             todo!();
         //         });
@@ -266,14 +266,14 @@ impl UserData for RunnerLua {
         methods.add_method_mut(
             "login",
             |_, this, args: (String, String, String, String)| {
-                let rt_handle = this.rt_handle.clone();
-                rt_handle.block_on(this.login(args.0, args.1, args.2))
+                let tokio_rt = this.tokio_rt.clone();
+                tokio_rt.block_on(this.login(args.0, args.1, args.2))
             },
         );
 
         methods.add_method_mut("application_login", |_, this, args: String| {
-            let rt_handle = this.rt_handle.clone();
-            rt_handle.block_on(this.application_login(args))
+            let tokio_rt = this.tokio_rt.clone();
+            tokio_rt.block_on(this.application_login(args))
         });
     }
 }

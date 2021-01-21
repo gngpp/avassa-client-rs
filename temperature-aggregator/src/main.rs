@@ -158,7 +158,7 @@ async fn main() -> anyhow::Result<()> {
     let avassa = login().await?;
 
     let dcs: Vec<String> = avassa
-        .get_json::<serde_json::Value>("/v1/config/tenants/acme/datacenters", None)
+        .get_json::<serde_json::Value>("/v1/config/datacenters", None)
         .await?
         .as_array()
         .expect("Failed to get DC list")

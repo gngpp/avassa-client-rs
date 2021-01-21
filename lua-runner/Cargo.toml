@@ -13,14 +13,14 @@ http="0.2"
 log = "0.4"
 parking_lot = "*"
 pretty_env_logger = "0.4"
-reqwest = { version="0.10"}
+reqwest = { version="0.11"}
 rlua = "0.17"
 serde_json = { version = "1" }
 thiserror = "1"
-tokio = { version="0.2", features = ["macros", "net", "rt-threaded", "sync"]}
+tokio = { version="1", features = ["macros", "net", "rt-multi-thread", "sync"]}
 url = "2"
 avassa-client = { path = "../avassa-client" }
-warp = "0.2"
+warp = "0.3"
 
 [build-dependencies]
 vergen="3"

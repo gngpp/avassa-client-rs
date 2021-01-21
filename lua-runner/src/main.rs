@@ -50,16 +50,12 @@ fn main() -> Result<()> {
 
     let results = Arc::new(Mutex::new(HashMap::new()));
 
-    let mut tokio_rt = tokio::runtime::Runtime::new()?;
+    let tokio_rt = Arc::new(tokio::runtime::Runtime::new()?);
 
     let (webserver, stop_ws) = webserver::WebServer::new();
     let webserver = std::sync::Arc::new(webserver);
 
-    let runner_lua = lua::RunnerLua::new(
-        webserver.clone(),
-        tokio_rt.handle().clone(),
-        results.clone(),
-    );
+    let runner_lua = lua::RunnerLua::new(webserver.clone(), tokio_rt.clone(), results.clone());
 
     let script = tokio_rt.block_on(load_script())?;
 
