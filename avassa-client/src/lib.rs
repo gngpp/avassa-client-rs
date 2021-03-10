@@ -129,9 +129,9 @@ pub(crate) struct LoginToken {
 
 impl LoginToken {
     // Still not clear what to do when a token has expired.
-    pub(crate) fn expires_in(&self) -> Option<chrono::Duration> {
-        self.expires_in.map(chrono::Duration::seconds)
-    }
+    // pub(crate) fn expires_in(&self) -> Option<chrono::Duration> {
+    //     self.expires_in.map(chrono::Duration::seconds)
+    // }
 }
 
 struct ClientState {
@@ -334,13 +334,6 @@ impl Client {
             .await
     }
 
-    /// Open a Volga infra producer
-    pub async fn volga_open_infra_producer(&self, topic: &str) -> Result<volga::InfraProducer> {
-        crate::volga::InfraProducerBuilder::new(&self, topic)?
-            .connect()
-            .await
-    }
-
     /// Creates and opens a Volga consumer
     pub fn volga_open_consumer(
         &self,
@@ -356,14 +349,10 @@ impl Client {
         consumer_name: &str,
         topic: &str,
         udc: &str,
-        volga_options: volga::Options,
+        volga_options: volga::ConsumerOptions,
     ) -> Result<volga::Consumer> {
-        let consumer_opts = volga::ConsumerOptions {
-            volga_options,
-            ..Default::default()
-        };
         crate::volga::ConsumerBuilder::new_nat(&self, consumer_name, topic, udc)?
-            .set_options(consumer_opts)
+            .set_options(volga_options)
             .connect()
             .await
     }
@@ -380,6 +369,11 @@ impl Client {
         let stream = tokio::net::TcpStream::connect(&*addrs).await?;
         let stream = connector.connect("fixme.avassa.net:4646", stream).await?;
         Ok(stream)
+    }
+
+    /// Opens a query stream
+    pub async fn volga_open_log_query(&self, query: &volga::Query) -> Result<volga::QueryStream> {
+        volga::QueryStream::new(self, query).await
     }
 }
 

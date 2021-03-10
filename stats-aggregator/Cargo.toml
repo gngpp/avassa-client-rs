@@ -10,6 +10,7 @@ edition = "2018"
 anyhow = "1"
 avassa-client={ path="../avassa-client" }
 chrono = "0.4"
+examples-common = { path="../examples-common"}
 futures = "0.3"
 futures-util="0.3"
 hvac-common = { path="../hvac-common" }

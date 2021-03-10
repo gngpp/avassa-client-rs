@@ -73,23 +73,23 @@ impl SecretStore {
             .post_json(&format!("{}/kv_maps", self.store_url), &create)
             .await?;
 
-        let map_url = format!("{}/kv_maps/{}", self.store_url, name);
+        let _map_url = format!("{}/kv_maps/{}", self.store_url, name);
         todo!("get content from sbox");
-        Ok(KVMap {
-            client,
-            map_url,
-            cache: HashMap::new(),
-            dirty: false,
-        })
+        // Ok(KVMap {
+        //     client,
+        //     map_url,
+        //     cache: HashMap::new(),
+        //     dirty: false,
+        // })
     }
 }
 
 /// Strongbox key value map
 pub struct KVMap {
-    client: Client,
-    map_url: String,
+    _client: Client,
+    _map_url: String,
     cache: HashMap<String, String>,
-    dirty: bool,
+    _dirty: bool,
 }
 
 impl KVMap {

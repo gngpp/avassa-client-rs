@@ -46,20 +46,6 @@ struct State {}
 
 type StateArc = Arc<Mutex<State>>;
 
-async fn login() -> anyhow::Result<avassa_client::Client> {
-    let supd = std::env::var("SUPD").expect("Failed to get SUPD");
-    info!("Connecting to api {}", supd);
-    let avassa = match avassa_client::Client::application_login(&supd).await {
-        Ok(client) => Ok(client),
-        Err(e) => {
-            info!("App role login failed ({}), trying username/password", e);
-            avassa_client::Client::login(&supd, "joe@acme.com", "verysecret").await
-        }
-    }?;
-    info!("Successfully logged in");
-    Ok(avassa)
-}
-
 macro_rules! be {
     ($expression:expr) => {
         match $expression {
@@ -74,9 +60,12 @@ async fn consumer_loop(
     dc: String,
     _state: StateArc,
 ) -> anyhow::Result<()> {
-    let options = avassa_client::volga::Options {
-        // persistence: avassa_client::volga::Persistence::RAM,
-        create: true,
+    let options = avassa_client::volga::ConsumerOptions {
+        volga_options: avassa_client::volga::Options {
+            persistence: avassa_client::volga::Persistence::RAM,
+            create: true,
+            ..Default::default()
+        },
         ..Default::default()
     };
 
@@ -88,7 +77,7 @@ async fn consumer_loop(
         {
             info!("Successfully opened consumer in {}", dc);
             loop {
-                let msg = be!(consumer
+                let (_, msg) = be!(consumer
                     // .consume_with_timeout(std::time::Duration::from_secs(60))
                     .consume()
                     .await);
@@ -174,22 +163,13 @@ async fn main() -> anyhow::Result<()> {
     pretty_env_logger::init();
     info!("Build Timestamp: {}", env!("VERGEN_BUILD_TIMESTAMP"));
 
-    let avassa = login().await?;
+    let avassa = examples_common::login().await?;
 
-    let dcs: Vec<String> = avassa
-        .get_json::<serde_json::Value>("/v1/state/assigned_datacenters", None)
+    let dcs = examples_common::datacenter_names(&avassa)
         .await?
-        .as_array()
-        .expect("Failed to get DC list")
         .into_iter()
-        .map(|d| {
-            d["name"]
-                .as_str()
-                .expect(&format!("Failed to get name of {:?}", d))
-                .to_string()
-        })
         .filter(|n| n != "topdc")
-        .collect();
+        .collect::<Vec<String>>();
 
     let state = Arc::new(Mutex::new(State {}));
 

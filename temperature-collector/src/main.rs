@@ -25,11 +25,7 @@ async fn main() -> anyhow::Result<()> {
     pretty_env_logger::init();
     info!("Build Timestamp: {}", env!("VERGEN_BUILD_TIMESTAMP"));
 
-    let supd = std::env::var("SUPD").expect("Failed to get SUPD");
-    let avassa = match avassa_client::Client::application_login(&supd).await {
-        Ok(client) => Ok(client),
-        Err(_) => avassa_client::Client::login(&supd, "joe@acme.com", "verysecret").await,
-    }?;
+    let avassa = examples_common::login().await?;
 
     // Find out the name of the DC
     let supd_dcs = avassa

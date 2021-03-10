@@ -27,7 +27,7 @@ impl UserData for Consumer {
                         .await
                         .map_err(|e| rlua::Error::ExternalError(std::sync::Arc::new(e)))
                 })
-                .map(|v| String::from_utf8_lossy(&v).to_string())
+                .map(|(_, v)| String::from_utf8_lossy(&v).to_string())
         });
     }
 }

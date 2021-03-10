@@ -1,6 +1,8 @@
 [workspace]
 members = [
   "avassa-client",
+  # "elasticsearch",
+  "examples-common",
   "hvac-common",
   "temperature-collector",
   "temperature-aggregator",

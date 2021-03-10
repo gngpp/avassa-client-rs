@@ -36,15 +36,6 @@ lazy_static! {
     .unwrap();
 }
 
-async fn login() -> anyhow::Result<avassa_client::Client> {
-    let supd = std::env::var("SUPD").expect("Failed to get SUPD");
-    let avassa = match avassa_client::Client::application_login(&supd).await {
-        Ok(client) => Ok(client),
-        Err(_) => avassa_client::Client::login(&supd, "joe@acme.com", "verysecret").await,
-    }?;
-    Ok(avassa)
-}
-
 macro_rules! be {
     ($expression:expr) => {
         match $expression {
@@ -55,9 +46,12 @@ macro_rules! be {
 }
 
 async fn consumer_loop(avassa: &avassa_client::Client, dc: String) -> anyhow::Result<()> {
-    let options = avassa_client::volga::Options {
-        persistence: avassa_client::volga::Persistence::RAM,
-        create: true,
+    let options = avassa_client::volga::ConsumerOptions {
+        volga_options: avassa_client::volga::Options {
+            persistence: avassa_client::volga::Persistence::RAM,
+            create: true,
+            ..Default::default()
+        },
         ..Default::default()
     };
 
@@ -68,7 +62,7 @@ async fn consumer_loop(avassa: &avassa_client::Client, dc: String) -> anyhow::Re
             .await
         {
             loop {
-                let msg = be!(consumer.consume().await);
+                let (_, msg) = be!(consumer.consume().await);
                 let msg: hvac_common::Message = be!(serde_json::from_slice(&msg));
                 info!("msg: {:#?}", msg);
 
@@ -155,22 +149,13 @@ async fn main() -> anyhow::Result<()> {
     pretty_env_logger::init();
     info!("Build Timestamp: {}", env!("VERGEN_BUILD_TIMESTAMP"));
 
-    let avassa = login().await?;
+    let avassa = examples_common::login().await?;
 
-    let dcs: Vec<String> = avassa
-        .get_json::<serde_json::Value>("/v1/config/assigned_datacenters", None)
+    let dcs = examples_common::datacenter_names(&avassa)
         .await?
-        .as_array()
-        .expect("Failed to get DC list")
         .into_iter()
-        .map(|d| {
-            d["name"]
-                .as_str()
-                .expect(&format!("Failed to get name of {:?}", d))
-                .to_string()
-        })
         .filter(|n| n != "topdc")
-        .collect();
+        .collect::<Vec<String>>();
 
     start_consumers(avassa.clone(), &dcs).await;
 
