@@ -46,7 +46,6 @@ use serde::Deserialize;
 use serde_json::json;
 
 pub mod strongbox;
-pub mod types;
 pub mod volga;
 
 /// Description of an error from the REST APIs
