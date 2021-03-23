@@ -165,11 +165,12 @@ async fn main() -> anyhow::Result<()> {
 
     let avassa = examples_common::login().await?;
 
-    let dcs = examples_common::datacenter_names(&avassa)
+    let dcs = avassa_client::utilities::state::assigned_datacenters(&avassa)
         .await?
         .into_iter()
-        .filter(|n| n != "topdc")
-        .collect::<Vec<String>>();
+        .filter(|dc| dc.name != "topdc")
+        .map(|dc| dc.name)
+        .collect::<Vec<_>>();
 
     let state = Arc::new(Mutex::new(State {}));
 

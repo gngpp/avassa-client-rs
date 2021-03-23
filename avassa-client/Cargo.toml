@@ -1,10 +1,15 @@
 [package]
 name = "avassa-client"
+# When releasing
+# - Update doc url
+# - Update version
+# - Create tag
 version = "0.1.0"
 authors = ["Fredrik Jansson <fj@avassa.io>"]
+license = "Apache 2.0"
 edition = "2018"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+documentation = "https://docs.rs/avassa-client/0.1.0/avassa_client"
+description = "Library for integrating with the Avassa APIs"
 
 [dependencies]
 chrono = { version = "0.4", features = ["serde"] }
