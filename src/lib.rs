@@ -45,7 +45,9 @@ use log::{debug, error};
 use serde::Deserialize;
 use serde_json::json;
 
-pub mod strongbox;
+// pub mod strongbox;
+#[cfg(feature = "utilities")]
+pub mod utilities;
 pub mod volga;
 
 /// Description of an error from the REST APIs
@@ -326,7 +328,21 @@ impl Client {
         topic: &str,
         options: volga::Options,
     ) -> Result<volga::Producer> {
-        crate::volga::ProducerBuilder::new(&self, producer_name, topic)?
+        crate::volga::ProducerBuilder::new(&self, producer_name, topic, options)?
+            .set_options(options)
+            .connect()
+            .await
+    }
+
+    /// Open a volga NAT producer on a topic in a uDC
+    pub async fn volga_open_nat_producer(
+        &self,
+        producer_name: &str,
+        topic: &str,
+        udc: &str,
+        options: volga::Options,
+    ) -> Result<volga::Producer> {
+        crate::volga::ProducerBuilder::new_nat(&self, producer_name, topic, udc, options)?
             .set_options(options)
             .connect()
             .await

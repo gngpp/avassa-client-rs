@@ -1,12 +1,33 @@
-[workspace]
-members = [
-  "avassa-client",
-  "avassa-client-utilities",
-  # "elasticsearch",
-  "examples-common",
-  "hvac-common",
-  "temperature-collector",
-  "temperature-aggregator",
-  "stats-aggregator",
-  "lua-runner",
-]
+[package]
+name = "avassa-client"
+# When releasing
+# - Update doc url
+# - Update version
+# - Create tag
+version = "0.1.0"
+authors = ["Fredrik Jansson <fj@avassa.io>"]
+license = "Apache 2.0"
+edition = "2018"
+documentation = "https://docs.rs/avassa-client/0.1.0/avassa_client"
+description = "Library for integrating with the Avassa APIs"
+
+[features]
+utilities = []
+
+[dependencies]
+chrono = { version = "0.4", features = ["serde"] }
+futures-core = "0.3"
+futures-util = "0.3"
+log = "0.4"
+native-tls = "0.2"
+pin-project = "1"
+reqwest = { version="0.11", features = ["json"] }
+serde = { version = "1", features=["derive"] }
+serde_json = { version = "1" }
+thiserror = "1"
+tokio = { version="1", features = ["macros", "sync", "time"] }
+tokio-native-tls = "0.3"
+tokio-stream = "*"
+tokio-tungstenite = { version="0.14", features = ["native-tls"] }
+tungstenite = "0.13"
+url = "2"

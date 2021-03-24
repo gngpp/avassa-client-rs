@@ -30,7 +30,7 @@ pub enum Persistence {
 /// Volga stream mode
 #[derive(Clone, Copy, Debug, Serialize)]
 pub enum Mode {
-    /// Only a single consumer can connect
+    /// Consumer names has to be unique
     #[serde(rename = "exclusive")]
     Exclusive,
     /// Messages are sent to consumers, with the same name, in a round-robin fashon.

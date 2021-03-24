@@ -17,9 +17,13 @@ pub struct ProducerBuilder<'a> {
 
 impl<'a> ProducerBuilder<'a> {
     /// Create new Producer builder
-    pub fn new(avassa_client: &'a crate::Client, name: &'a str, topic: &str) -> Result<Self> {
-        let hp = "localhost";
-        let volga_url = url::Url::parse(&format!("volga://{}/{}", hp, topic,))?;
+    pub fn new(
+        avassa_client: &'a crate::Client,
+        name: &'a str,
+        topic: &str,
+        options: Options,
+    ) -> Result<Self> {
+        let volga_url = url::Url::parse(&format!("volga://localhost/{}", topic,))?;
 
         let ws_url = avassa_client.websocket_url.join("volga")?;
 
@@ -28,7 +32,27 @@ impl<'a> ProducerBuilder<'a> {
             volga_url,
             ws_url,
             name,
-            options: Options::default(),
+            options,
+        })
+    }
+
+    pub(crate) fn new_nat(
+        avassa_client: &'a crate::Client,
+        name: &'a str,
+        topic: &str,
+        udc: &str,
+        options: Options,
+    ) -> Result<Self> {
+        let volga_url = url::Url::parse(&format!("volga-nat://{}/{}", udc, topic,))?;
+
+        let ws_url = avassa_client.websocket_url.join("volga")?;
+
+        Ok(Self {
+            avassa_client,
+            volga_url,
+            ws_url,
+            name,
+            options,
         })
     }
 

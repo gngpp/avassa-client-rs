@@ -1,6 +1,0 @@
-name: high-resource
-applications:
-  - name: high-resource
-    placement:
-      match-dc-labels: >
-        type = edge
