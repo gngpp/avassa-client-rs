@@ -31,3 +31,6 @@ tokio-stream = "*"
 tokio-tungstenite = { version="0.14", features = ["native-tls"] }
 tungstenite = "0.13"
 url = "2"
+
+[dev-dependencies]
+tokio = { version="1", features = ["rt-multi-thread"] }
