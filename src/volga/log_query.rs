@@ -212,7 +212,7 @@ impl Stream for QueryStream {
         cx: &mut core::task::Context<'_>,
     ) -> core::task::Poll<Option<Self::Item>> {
         let mut this = self.project();
-        // core::pin::Pin::new(&mut this.ws).poll_next(cx)
+
         match core::pin::Pin::new(&mut this.ws).poll_next(cx) {
             core::task::Poll::Ready(val) => {
                 let res: Option<Self::Item> = match val {
@@ -223,7 +223,6 @@ impl Stream for QueryStream {
                     ))))),
                     Some(Err(e)) => Some(Err(e.into())),
                     None => None,
-                    // Ok(_) => Err,
                 };
 
                 core::task::Poll::Ready(res)

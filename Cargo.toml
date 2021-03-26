@@ -19,7 +19,6 @@ chrono = { version = "0.4", features = ["serde"] }
 futures-core = "0.3"
 futures-util = "0.3"
 log = "0.4"
-native-tls = "0.2"
 pin-project = "1"
 reqwest = { version="0.11", features = ["json"] }
 serde = { version = "1", features=["derive"] }
