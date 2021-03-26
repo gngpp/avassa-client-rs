@@ -18,7 +18,8 @@ build-test:
   before_script:
     - *alpine_before
   script:
-    - cargo test
+    - cargo build --verbose
+    - cargo test --verbose
 
 
 # build-container:
