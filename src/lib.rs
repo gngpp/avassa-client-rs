@@ -61,8 +61,8 @@ use serde::Deserialize;
 use serde_json::json;
 
 // pub mod strongbox;
-#[cfg(feature = "utilities")]
-pub mod utilities;
+// #[cfg(feature = "utilities")]
+// pub mod utilities;
 pub mod volga;
 
 /// Description of an error from the REST APIs
@@ -133,7 +133,8 @@ pub enum Error {
     IO(#[from] std::io::Error),
 }
 
-type Result<T> = std::result::Result<T, Error>;
+/// Result type
+pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug, Deserialize)]
 pub(crate) struct LoginToken {
