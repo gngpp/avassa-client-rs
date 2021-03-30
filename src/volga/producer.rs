@@ -103,7 +103,7 @@ pub struct Producer {
 }
 impl Producer {
     /// Produce message
-    pub async fn produce(&mut self, content: String) -> Result<()> {
+    pub async fn produce(&mut self, content: Vec<u8>) -> Result<()> {
         let cmd = json!({
             "op": "produce",
             "mode": "sync",

@@ -27,7 +27,7 @@
 //! ```
 //!
 //! ## Volga
-//! ### Create a Volga consumer
+//! ### Create a Volga producer and consumer
 //! ```no_run
 //! #[tokio::main]
 //! async fn main() -> Result<(), avassa_client::Error> {
@@ -42,14 +42,29 @@
 //!         .add_root_certificate(&ca_cert)?
 //!         .application_login("https://api.customer.net", Some(approle_id)).await?;
 //!
-//!     let builder = client.volga_open_consumer(
+//!     // Clone to move into async closure
+//!     let producer_client = client.clone();
+//!
+//!     tokio::spawn(async move {
+//!         let mut producer = producer_client.volga_open_producer(
+//!             "test-producer",
+//!             "my-topic",
+//!             Default::default())
+//!             .await?;
+//!
+//!         producer.produce(vec![1,2,3]).await?;
+//!         Ok::<_, avassa_client::Error>(())
+//!     });
+//!
+//!     let mut consumer = client.volga_open_consumer(
 //!         "test-consumer",
-//!         "my-topic")
-//!         ?;
+//!         "my-topic",
+//!         Default::default())
+//!         .await?;
 //!
-//!     let mut consumer = builder.connect().await?;
+//!     let (_metadata, message) = consumer.consume().await?;
 //!
-//!     let message = consumer.consume().await?;
+//!     assert_eq!(message, vec![1,2,3]);
 //!     Ok(())
 //! }
 //! ```
@@ -61,8 +76,6 @@ use serde::Deserialize;
 use serde_json::json;
 
 // pub mod strongbox;
-// #[cfg(feature = "utilities")]
-// pub mod utilities;
 pub mod volga;
 
 /// Description of an error from the REST APIs
@@ -143,13 +156,6 @@ pub(crate) struct LoginToken {
     pub creation_time: Option<chrono::DateTime<chrono::offset::FixedOffset>>,
 }
 
-impl LoginToken {
-    // Still not clear what to do when a token has expired.
-    // pub(crate) fn expires_in(&self) -> Option<chrono::Duration> {
-    //     self.expires_in.map(chrono::Duration::seconds)
-    // }
-}
-
 struct ClientState {
     login_token: LoginToken,
 }
@@ -201,8 +207,7 @@ impl ClientBuilder {
 
     /// Login the application from secret set in the environment
     /// `approle_id` can optionally be provided
-    /// `ca_certificate` optional CA certificate, in PEM format. If no CA certificate is provided,
-    /// certificate verification is disabled. This should be fixed.
+    /// This assumes the environment variable `APPROLE_SECRET_ID` is set by the system.
     pub async fn application_login(&self, host: &str, approle_id: Option<&str>) -> Result<Client> {
         let secret_id = std::env::var("APPROLE_SECRET_ID")
             .map_err(|_| Error::LoginFailureMissingEnv(String::from("APPROLE_SECRET_ID")))?;
@@ -426,12 +431,16 @@ impl Client {
     }
 
     /// Creates and opens a Volga consumer
-    pub fn volga_open_consumer(
+    pub async fn volga_open_consumer(
         &self,
         consumer_name: &str,
         topic: &str,
-    ) -> Result<volga::ConsumerBuilder> {
-        crate::volga::ConsumerBuilder::new(&self, consumer_name, topic)
+        options: crate::volga::ConsumerOptions,
+    ) -> Result<volga::Consumer> {
+        crate::volga::ConsumerBuilder::new(&self, consumer_name, topic)?
+            .set_options(options)
+            .connect()
+            .await
     }
 
     /// Creates and opens a Volga NAT consumer
@@ -440,10 +449,10 @@ impl Client {
         consumer_name: &str,
         topic: &str,
         udc: &str,
-        volga_options: volga::ConsumerOptions,
+        options: crate::volga::ConsumerOptions,
     ) -> Result<volga::Consumer> {
         crate::volga::ConsumerBuilder::new_nat(&self, consumer_name, topic, udc)?
-            .set_options(volga_options)
+            .set_options(options)
             .connect()
             .await
     }
