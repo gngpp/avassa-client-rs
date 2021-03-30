@@ -146,6 +146,17 @@ pub enum Error {
     /// IO Errors
     #[error("IO error {0}")]
     IO(#[from] std::io::Error),
+
+    /// General Error
+    #[error("Error {0}")]
+    General(String),
+}
+
+impl Error {
+    /// Create a general error
+    pub fn general(err: &str) -> Self {
+        Self::General(err.to_string())
+    }
 }
 
 /// Result type
