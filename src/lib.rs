@@ -52,7 +52,7 @@
 //!             Default::default())
 //!             .await?;
 //!
-//!         producer.produce(vec![1,2,3]).await?;
+//!         producer.produce("test message").await?;
 //!         Ok::<_, avassa_client::Error>(())
 //!     });
 //!
@@ -64,7 +64,9 @@
 //!
 //!     let (_metadata, message) = consumer.consume().await?;
 //!
-//!     assert_eq!(message, vec![1,2,3]);
+//!     let message = String::from_utf8_lossy(&message);
+//!
+//!     assert_eq!(message, "test message");
 //!     Ok(())
 //! }
 //! ```
