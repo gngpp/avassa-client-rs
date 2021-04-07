@@ -76,7 +76,7 @@ impl<'a> ProducerBuilder<'a> {
         let (mut ws, _) = client_async(request, tls).await?;
 
         let cmd = json!({
-            "op": "open_producer",
+            "op": "open-producer",
             "url": self.volga_url.as_str(),
             "name": self.name,
             "opts": self.options,

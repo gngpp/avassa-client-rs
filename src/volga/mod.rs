@@ -47,6 +47,7 @@ pub struct Options {
     /// Fail if the topic does not exist
     pub create: bool,
     /// Number of replicas in the cluster
+    #[serde(rename = "replication-factor")]
     pub replication_factor: u32,
     /// Volga stream persistence
     pub persistence: Persistence,

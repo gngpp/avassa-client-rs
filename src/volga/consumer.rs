@@ -119,7 +119,7 @@ impl<'a> ConsumerBuilder<'a> {
         let (mut ws, _) = client_async(request, tls).await?;
 
         let cmd = json!({
-            "op": "open_consumer",
+            "op": "open-consumer",
             "url": self.volga_url.as_str(),
             "name": self.name,
             "position": self.options.position,

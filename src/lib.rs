@@ -229,7 +229,7 @@ impl ClientBuilder {
         let role_id = approle_id.unwrap_or(&secret_id);
 
         let base_url = url::Url::parse(host)?;
-        let url = base_url.join("v1/approle_login")?;
+        let url = base_url.join("v1/approle-login")?;
         let data = json!({
             "role_id": role_id,
             "secret_id": secret_id,
