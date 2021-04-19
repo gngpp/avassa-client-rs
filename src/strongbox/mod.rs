@@ -8,6 +8,9 @@ use std::collections::HashMap;
 
 use crate::Result;
 
+/// Certificate API
+pub mod tls;
+
 const SBOX_SECRETS: &str = "v1/config/strongbox/secrets";
 
 /// A Strobox secret store can contain one or more `KVMap` key value stores.

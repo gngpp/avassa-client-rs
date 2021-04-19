@@ -6,7 +6,7 @@ name = "avassa-client"
 # - Create tag
 version = "0.1.0"
 authors = ["Fredrik Jansson <fj@avassa.io>"]
-license = "Apache 2.0"
+license = "Apache-2.0"
 edition = "2018"
 documentation = "https://docs.rs/avassa-client/0.1.0/avassa_client"
 description = "Library for integrating with the Avassa APIs"
@@ -15,6 +15,8 @@ description = "Library for integrating with the Avassa APIs"
 chrono = { version = "0.4", features = ["serde"] }
 futures-core = "0.3"
 futures-util = "0.3"
+humantime="2"
+humantime-serde="1"
 log = "0.4"
 pin-project = "1"
 reqwest = { version="0.11", features = ["json"] }

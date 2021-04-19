@@ -77,7 +77,7 @@ use log::{debug, error};
 use serde::Deserialize;
 use serde_json::json;
 
-// pub mod strongbox;
+pub mod strongbox;
 pub mod volga;
 
 /// Description of an error from the REST APIs
@@ -407,6 +407,54 @@ impl Client {
             Ok(resp)
         } else {
             error!("POST call failed");
+            let status = result.status();
+            let resp = result.json().await;
+            match resp {
+                Ok(resp) => Err(Error::REST(resp)),
+                Err(_) => Err(Error::WebServer(status.as_u16(), status.to_string())),
+            }
+        }
+    }
+
+    /// POST arbitrary JSON to a path
+    pub async fn put_json(
+        &self,
+        path: &str,
+        data: &serde_json::Value,
+    ) -> Result<serde_json::Value> {
+        let url = self.base_url.join(path)?;
+        let token = self.state.lock().await.login_token.token.clone();
+
+        debug!("PUT {} {:?}", url, data);
+
+        let result = self
+            .client
+            .put(url)
+            .json(&data)
+            .bearer_auth(&token)
+            .send()
+            .await?;
+
+        if result.status().is_success() {
+            use std::error::Error;
+            let resp = result.json().await.or_else(|e| match e {
+                e if e.is_decode() => {
+                    match e
+                        .source()
+                        .map(|e| e.downcast_ref::<serde_json::Error>())
+                        .flatten()
+                    {
+                        Some(e) if e.is_eof() => {
+                            Ok(serde_json::Value::Object(serde_json::Map::new()))
+                        }
+                        _ => Err(e),
+                    }
+                }
+                e => Err(e),
+            })?;
+            Ok(resp)
+        } else {
+            error!("PUT call failed");
             let status = result.status();
             let resp = result.json().await;
             match resp {
