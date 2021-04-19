@@ -231,8 +231,8 @@ impl ClientBuilder {
         let base_url = url::Url::parse(host)?;
         let url = base_url.join("v1/approle-login")?;
         let data = json!({
-            "role_id": role_id,
-            "secret_id": secret_id,
+            "role-id": role_id,
+            "secret-id": secret_id,
         });
         Client::do_login(&self, base_url, url, data).await
     }
