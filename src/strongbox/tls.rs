@@ -66,14 +66,14 @@ pub mod server_certificate {
     #[derive(Debug, Deserialize)]
     pub struct Certificate {
         /// Certificate in PEM format
-        cert: String,
+        pub cert: String,
         /// Private key
         #[serde(rename = "private-key")]
-        private_key: String,
+        pub private_key: String,
         /// Serial number
-        serial: String,
+        pub serial: String,
         /// Expiry date
-        expires: chrono::DateTime<chrono::offset::FixedOffset>,
+        pub expires: chrono::DateTime<chrono::offset::FixedOffset>,
     }
 
     /// Generate a server certificate for an application

@@ -1,16 +1,17 @@
 //!
 //! Strongbox clients
 //!
-use crate::Client;
-use log::debug;
-use serde_json::json;
-use std::collections::HashMap;
+// use crate::Client;
+// use log::debug;
+// use serde_json::json;
+// use std::collections::HashMap;
 
-use crate::Result;
+// use crate::Result;
 
 /// Certificate API
 pub mod tls;
 
+/*
 const SBOX_SECRETS: &str = "v1/config/strongbox/secrets";
 
 /// A Strobox secret store can contain one or more `KVMap` key value stores.
@@ -111,3 +112,4 @@ impl KVMap {
         self.cache.remove(key)
     }
 }
+*/
