@@ -4,12 +4,13 @@ name = "avassa-client"
 # - Update doc url
 # - Update version
 # - Create tag
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Fredrik Jansson <fj@avassa.io>"]
 license = "Apache-2.0"
 edition = "2018"
-documentation = "https://docs.rs/avassa-client/0.1.0/avassa_client"
+documentation = "https://docs.rs/avassa-client"
 description = "Library for integrating with the Avassa APIs"
+repository="https://gitlab.com/avassa-public/avassa-client-rs"
 
 [dependencies]
 chrono = { version = "0.4", features = ["serde"] }
