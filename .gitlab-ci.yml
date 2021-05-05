@@ -4,7 +4,7 @@ cache:
 
 stages:
   - build-test
-  - containers
+  - downstream
 
 .alpine_before: &alpine_before
   - apk add libc-dev openssl-dev
@@ -21,71 +21,7 @@ build-test:
     - cargo build --verbose
     - cargo test --verbose
 
-
-# build-container:
-#   stage: build-test
-#   image: rust:1-alpine
-#   tags:
-#     - avassa-docker
-#   before_script:
-#     - *alpine_before
-#   variables:
-#     CARGO_TARGET_DIR: alpine-target
-#   script:
-#     - cargo build --release
-#     - find alpine-target/release -maxdepth 1 -executable -type f
-#     - find alpine-target/release -maxdepth 1 -executable -type f | xargs strip
-#   artifacts:
-#     expire_in: 1 day
-#     when: on_success
-#     paths:
-#       - alpine-target/release
-#       - scripts
-
-# lua-container:
-#   stage: containers
-#   image: docker:git
-#   services:
-#     - docker:dind
-#   dependencies:
-#     - build-container
-#   before_script:
-#     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-#   variables:
-#     IMAGE_NAME: $CI_REGISTRY_IMAGE/lua-runner
-#   script:
-#     - docker build -t $IMAGE_NAME:$CI_COMMIT_SHA -f lua-runner/Dockerfile .
-#     - docker tag $IMAGE_NAME:$CI_COMMIT_SHA $IMAGE_NAME:latest
-#     - docker push $IMAGE_NAME:latest
-
-# temperature:
-#   stage: containers
-#   image: docker:git
-#   services:
-#     - docker:dind
-#   dependencies:
-#     - build-container
-#   before_script:
-#     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-#   variables:
-#     IMAGE_NAME: $CI_REGISTRY_IMAGE/temperature
-#   script:
-#     - docker build -t $IMAGE_NAME:$CI_COMMIT_SHA -f temperature-collector/Dockerfile .
-#     - docker tag $IMAGE_NAME:$CI_COMMIT_SHA $IMAGE_NAME:latest
-#     - docker push $IMAGE_NAME:latest
-
-# stats-aggregator:
-#   stage: containers
-#   image: docker:git
-#   services:
-#     - docker:dind
-#   dependencies:
-#     - build-container
-#   before_script:
-#     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-#   variables:
-#     IMAGE_NAME: $CI_REGISTRY_IMAGE/stats-aggregator
-#   script:
-#     - docker build -t $IMAGE_NAME:$CI_COMMIT_SHA -f stats-aggregator/Dockerfile .
-#     - docker tag $IMAGE_NAME:$CI_COMMIT_SHA $IMAGE_NAME:latest
-#     - docker push $IMAGE_NAME:latest
+rust-client-utilities:
+  stage: downstream
+  trigger:
+    project: avassa-public/avassa-client-rust-utilities
