@@ -16,8 +16,6 @@ repository="https://gitlab.com/avassa-public/avassa-client-rs"
 chrono = { version = "0.4", features = ["serde"] }
 futures-core = "0.3"
 futures-util = "0.3"
-humantime="2"
-humantime-serde="1"
 log = "0.4"
 pin-project = "1"
 reqwest = { version="0.11", features = ["json"] }

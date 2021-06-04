@@ -11,6 +11,13 @@
 /// Certificate API
 pub mod tls;
 
+// pub enum Distribute {
+//     ToAll,
+//     ToNone,
+//     Inherit,
+//     Sites(Vec<String>),
+// }
+
 /*
 const SBOX_SECRETS: &str = "v1/config/strongbox/secrets";
 
