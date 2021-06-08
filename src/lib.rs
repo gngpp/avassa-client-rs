@@ -313,7 +313,7 @@ impl Client {
         base_url: url::Url,
         login_token: LoginToken,
     ) -> Result<Self> {
-        let websocket_url = url::Url::parse(&format!("ws://{}/v1/ws/", base_url.host_port()?))?;
+        let websocket_url = url::Url::parse(&format!("wss://{}/v1/ws/", base_url.host_port()?))?;
 
         let state = ClientState { login_token };
 
