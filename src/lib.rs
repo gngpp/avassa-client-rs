@@ -356,8 +356,7 @@ impl Client {
         let result = builder.send().await?;
 
         if result.status().is_success() {
-            let text = result.text().await?;
-            let res = serde_json::from_str(&text)?;
+            let res = result.json().await?;
             Ok(res)
         } else {
             error!("HTTP call failed");
@@ -540,6 +539,11 @@ impl Client {
     /// Opens a query stream
     pub async fn volga_open_log_query(&self, query: &volga::Query) -> Result<volga::QueryStream> {
         volga::QueryStream::new(self, query).await
+    }
+
+    /// Try to open a Strongbox Vault
+    pub async fn open_strongbox_vault(&self, vault: &str) -> Result<strongbox::Vault> {
+        strongbox::Vault::open(self, vault).await
     }
 }
 
