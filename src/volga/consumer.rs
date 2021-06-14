@@ -32,16 +32,6 @@ impl Default for ConsumerOptions {
     }
 }
 
-fn position_timestamp<S>(
-    timestamp: &chrono::DateTime<chrono::Local>,
-    s: S,
-) -> std::result::Result<S::Ok, S::Error>
-where
-    S: serde::Serializer,
-{
-    s.serialize_i64(timestamp.timestamp())
-}
-
 /// Volga Consumer starting position
 #[derive(Clone, Copy, Debug, Serialize)]
 pub enum ConsumerPosition {
@@ -55,11 +45,11 @@ pub enum ConsumerPosition {
     #[serde(rename = "unread")]
     Unread,
     /// Start consuming from a sequence number
-    #[serde(rename = "seqno")]
+    #[serde(skip)]
     SequenceNumber(u64),
+
     /// Start consuming from a timestamp
-    #[serde(rename = "timestamp")]
-    #[serde(serialize_with = "position_timestamp")]
+    #[serde(skip)]
     TimeStamp(chrono::DateTime<chrono::Local>),
 }
 
@@ -138,13 +128,31 @@ impl<'a> ConsumerBuilder<'a> {
         let tls = self.avassa_client.open_tls_stream().await?;
         let (mut ws, _) = client_async(request, tls).await?;
 
-        let cmd = json!({
-            "op": "open-consumer",
-            "url": self.volga_url.as_str(),
-            "name": self.name,
-            "position": self.options.position,
-            "opts": self.options.volga_options,
-        });
+        let cmd = match self.options.position {
+            super::ConsumerPosition::SequenceNumber(seqno) => json!({
+                "op": "open-consumer",
+                "url": self.volga_url.as_str(),
+                "name": self.name,
+                "position": "seqno",
+                "position-sequence-number": seqno,
+                "opts": self.options.volga_options,
+            }),
+            super::ConsumerPosition::TimeStamp(ts) => json!({
+                "op": "open-consumer",
+                "url": self.volga_url.as_str(),
+                "name": self.name,
+                "position": "timestamp",
+                "position-timestamp": ts,
+                "opts": self.options.volga_options,
+            }),
+            _ => json!({
+                "op": "open-consumer",
+                "url": self.volga_url.as_str(),
+                "name": self.name,
+                "position": self.options.position,
+                "opts": self.options.volga_options,
+            }),
+        };
 
         let json = serde_json::to_string_pretty(&cmd)?;
         debug!("{}", json);
@@ -282,16 +290,4 @@ impl Consumer {
 //     }
 // }
 #[cfg(test)]
-mod test {
-    #[test]
-    fn serialize_consumer_position() {
-        let p = super::ConsumerPosition::SequenceNumber(12345);
-        assert_eq!(r#"{"seqno":12345}"#, serde_json::to_string(&p).unwrap());
-        let ts = chrono::Local::now();
-        let p = super::ConsumerPosition::TimeStamp(ts);
-        assert_eq!(
-            format!(r#"{{"timestamp":{}}}"#, ts.timestamp()),
-            serde_json::to_string(&p).unwrap()
-        );
-    }
-}
+mod test {}
