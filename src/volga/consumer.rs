@@ -32,15 +32,35 @@ impl Default for ConsumerOptions {
     }
 }
 
+fn position_timestamp<S>(
+    timestamp: &chrono::DateTime<chrono::Local>,
+    s: S,
+) -> std::result::Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    s.serialize_i64(timestamp.timestamp())
+}
+
 /// Volga Consumer starting position
 #[derive(Clone, Copy, Debug, Serialize)]
 pub enum ConsumerPosition {
     /// Get all messages from the beginning
     #[serde(rename = "beginning")]
     Beginning,
+    /// Start consuming from the end, i.e only get new messages
+    #[serde(rename = "end")]
+    End,
     /// Get all unread messages
     #[serde(rename = "unread")]
     Unread,
+    /// Start consuming from a sequence number
+    #[serde(rename = "seqno")]
+    SequenceNumber(u64),
+    /// Start consuming from a timestamp
+    #[serde(rename = "timestamp")]
+    #[serde(serialize_with = "position_timestamp")]
+    TimeStamp(chrono::DateTime<chrono::Local>),
 }
 
 impl Default for ConsumerPosition {
@@ -261,3 +281,17 @@ impl Consumer {
 //         }
 //     }
 // }
+#[cfg(test)]
+mod test {
+    #[test]
+    fn serialize_consumer_position() {
+        let p = super::ConsumerPosition::SequenceNumber(12345);
+        assert_eq!(r#"{"seqno":12345}"#, serde_json::to_string(&p).unwrap());
+        let ts = chrono::Local::now();
+        let p = super::ConsumerPosition::TimeStamp(ts);
+        assert_eq!(
+            format!(r#"{{"timestamp":{}}}"#, ts.timestamp()),
+            serde_json::to_string(&p).unwrap()
+        );
+    }
+}
