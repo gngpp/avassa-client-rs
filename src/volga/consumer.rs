@@ -95,9 +95,9 @@ impl<'a> ConsumerBuilder<'a> {
         avassa_client: &'a crate::Client,
         name: &str,
         topic: &str,
-        udc: &str,
+        site: &str,
     ) -> Result<Self> {
-        let volga_url = url::Url::parse(&format!("volga-nat://{}/{}", udc, topic,))?;
+        let volga_url = url::Url::parse(&format!("volga-nat://{}/{}", site, topic,))?;
 
         let ws_url = avassa_client.websocket_url.join("volga")?;
 

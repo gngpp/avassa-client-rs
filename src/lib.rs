@@ -476,15 +476,15 @@ impl Client {
             .await
     }
 
-    /// Open a volga NAT producer on a topic in a uDC
+    /// Open a volga NAT producer on a topic in a site
     pub async fn volga_open_nat_producer(
         &self,
         producer_name: &str,
         topic: &str,
-        udc: &str,
+        site: &str,
         options: volga::Options,
     ) -> Result<volga::Producer> {
-        crate::volga::ProducerBuilder::new_nat(&self, producer_name, topic, udc, options)?
+        crate::volga::ProducerBuilder::new_nat(&self, producer_name, topic, site, options)?
             .set_options(options)
             .connect()
             .await
@@ -508,10 +508,10 @@ impl Client {
         &self,
         consumer_name: &str,
         topic: &str,
-        udc: &str,
+        site: &str,
         options: crate::volga::ConsumerOptions,
     ) -> Result<volga::Consumer> {
-        crate::volga::ConsumerBuilder::new_nat(&self, consumer_name, topic, udc)?
+        crate::volga::ConsumerBuilder::new_nat(&self, consumer_name, topic, site)?
             .set_options(options)
             .connect()
             .await
