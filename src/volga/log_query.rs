@@ -183,7 +183,7 @@ impl QueryStream {
         let (mut ws, _) = client_async(request, tls).await?;
 
         let json = serde_json::to_string_pretty(&query)?;
-        log::debug!("{}", json);
+        tracing::debug!("{}", json);
 
         ws.send(WSMessage::Binary(serde_json::to_vec(&query)?))
             .await?;

@@ -27,7 +27,7 @@ impl Vault {
         resp.as_array()
             .ok_or(crate::Error::API("Expected an array".into()))?
             .into_iter()
-            .inspect(|s| log::debug!("{:#?}", s))
+            .inspect(|s| tracing::debug!("{:#?}", s))
             .map(|s| {
                 s.as_str()
                     .map(str::to_string)
@@ -38,7 +38,7 @@ impl Vault {
 
     pub(crate) async fn open(client: &Client, vault: &str) -> Result<Self> {
         let vault_url = format!("{}/{}", SBOX_VAULTS, vault);
-        log::debug!("Opening vault at path: {}", vault_url);
+        tracing::debug!("Opening vault at path: {}", vault_url);
         // Try to get the sbox vault
         let _: serde_json::Value = client.get_json(&vault_url, None).await?;
         Ok(Self {
@@ -69,7 +69,7 @@ impl Vault {
             }
         }
 
-        log::debug!("Successfully loaded {}", name);
+        tracing::debug!("Successfully loaded {}", name);
 
         Ok(KVMap { cache })
     }

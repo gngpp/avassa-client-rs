@@ -84,6 +84,7 @@ async fn get_binary_response(ws: &mut WebSocketStream) -> Result<Vec<u8>> {
 async fn get_ok_volga_response(ws: &mut WebSocketStream) -> Result<()> {
     let msg = get_binary_response(ws).await?;
     let resp: VolgaResponse = serde_json::from_slice(&msg)?;
+    tracing::trace!("volga response {:?}", resp);
     match resp.result {
         VolgaResult::Ok => Ok(()),
         VolgaResult::Error => Err(Error::Volga(resp.info)),

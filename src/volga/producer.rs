@@ -1,7 +1,6 @@
 use super::{Options, WebSocketStream};
 use crate::Result;
 use futures_util::SinkExt;
-use log::debug;
 use serde::Serialize;
 use serde_json::json;
 use tokio_tungstenite::{client_async, tungstenite::Message as WSMessage};
@@ -62,6 +61,7 @@ impl<'a> ProducerBuilder<'a> {
     }
 
     /// Connect and create a [`Producer`]
+    #[tracing::instrument(level = "debug", skip(self))]
     pub async fn connect(self) -> Result<Producer> {
         let request = tungstenite::handshake::client::Request::builder()
             .uri(self.ws_url.to_string())
@@ -83,16 +83,14 @@ impl<'a> ProducerBuilder<'a> {
         });
 
         let json = serde_json::to_string_pretty(&cmd)?;
-        debug!("{}", json);
+        tracing::trace!("{}", json);
 
         ws.send(WSMessage::Binary(serde_json::to_vec(&cmd)?))
             .await?;
 
-        debug!("Waiting for ok");
-        // let resp = ws.next().await;
-        // debug!("resp: {:?}", resp);
+        tracing::trace!("Waiting for ok");
         super::get_ok_volga_response(&mut ws).await?;
-        debug!("Successfully connected producer {}", self.volga_url);
+        tracing::trace!("Successfully connected producer {}", self.volga_url);
         Ok(Producer { ws })
     }
 }
@@ -103,6 +101,7 @@ pub struct Producer {
 }
 impl Producer {
     /// Produce message
+    #[tracing::instrument(level = "trace", skip(self))]
     pub async fn produce(&mut self, content: &str) -> Result<()> {
         let cmd = json!({
             "op": "produce",
@@ -110,7 +109,7 @@ impl Producer {
             "payload": content,
         });
 
-        debug!("Cmd: {}", cmd);
+        tracing::debug!("Cmd: {}", cmd);
 
         self.ws
             .send(WSMessage::Binary(serde_json::to_vec(&cmd)?))

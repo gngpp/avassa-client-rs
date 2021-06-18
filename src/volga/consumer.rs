@@ -3,7 +3,6 @@ use crate::Result;
 use chrono::serde::ts_milliseconds;
 use chrono::{DateTime, Utc};
 use futures_util::SinkExt;
-use log::{debug, trace};
 use pin_project::pin_project;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -25,7 +24,11 @@ pub struct ConsumerOptions {
 impl Default for ConsumerOptions {
     fn default() -> Self {
         Self {
-            volga_options: Default::default(),
+            volga_options: super::Options {
+                // As consumer, try with create false.
+                create: false,
+                ..Default::default()
+            },
             position: Default::default(),
             auto_more: true,
         }
@@ -155,14 +158,14 @@ impl<'a> ConsumerBuilder<'a> {
         };
 
         let json = serde_json::to_string_pretty(&cmd)?;
-        debug!("{}", json);
+        tracing::debug!("{}", json);
 
         ws.send(WSMessage::Binary(serde_json::to_vec(&cmd)?))
             .await?;
 
         super::get_ok_volga_response(&mut ws).await?;
 
-        debug!("Successfully conected consumer to {}", self.volga_url);
+        tracing::debug!("Successfully conected consumer to {}", self.volga_url);
         let mut consumer = Consumer {
             ws,
             options: self.options,
@@ -185,7 +188,7 @@ pub struct MessageMetadata {
     pub name: String,
     /// True if a control message
     pub control: bool,
-    /// Timestamp (seconds since epoch)
+    /// Timestamp (milliseconds since epoch)
     #[serde(with = "ts_milliseconds")]
     pub time: DateTime<Utc>,
     /// Sequence number
@@ -213,7 +216,7 @@ impl Consumer {
             "n": n,
         });
 
-        debug!("{}", cmd);
+        tracing::trace!("{}", cmd);
         self.ws
             .send(WSMessage::Binary(serde_json::to_vec(&cmd)?))
             .await?;
@@ -229,7 +232,7 @@ impl Consumer {
             // First get the control message
             match tokio::time::timeout(timeout, super::get_binary_response(&mut self.ws)).await {
                 Err(_) => {
-                    trace!("Sending ping");
+                    tracing::trace!("Sending ping");
                     let ping = tokio_tungstenite::tungstenite::Message::Ping(vec![0; 1]);
                     self.ws.send(ping).await?;
                 }
@@ -237,9 +240,11 @@ impl Consumer {
                     let msg = msg?;
                     let resp: MessageMetadata = serde_json::from_slice(&msg)?;
                     self.last_seq_no = resp.seqno;
+                    tracing::trace!("Metadata: {:?}", resp);
 
                     // Read the actual message
                     let msg = super::get_binary_response(&mut self.ws).await?;
+                    tracing::trace!("Message len: {}", msg.len());
 
                     if resp.remain == 0 && self.options.auto_more {
                         self.more(N_IN_AUTO_MORE).await?;

@@ -16,7 +16,7 @@ repository="https://gitlab.com/avassa-public/avassa-client-rs"
 chrono = { version = "0.4", features = ["serde"] }
 futures-core = "0.3"
 futures-util = "0.3"
-log = "0.4"
+# log = "0.4"
 pin-project = "1"
 reqwest = { version="0.11", features = ["json"] }
 serde = { version = "1", features=["derive"] }
@@ -26,6 +26,8 @@ tokio = { version="1", features = ["macros", "sync", "time"] }
 tokio-native-tls = "0.3"
 tokio-stream = "0.1"
 tokio-tungstenite = { version="0.14", features = ["native-tls"] }
+tracing = "0.1"
+tracing-futures="0.2"
 tungstenite = "0.13"
 url = "2"
 

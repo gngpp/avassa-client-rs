@@ -73,7 +73,6 @@
 
 #![deny(missing_docs)]
 
-use log::{debug, error};
 use serde::Deserialize;
 use serde_json::json;
 
@@ -162,13 +161,23 @@ impl Error {
 /// Result type
 pub type Result<T> = std::result::Result<T, Error>;
 
-#[derive(Debug, Deserialize)]
+#[derive(Deserialize)]
 pub(crate) struct LoginToken {
     pub token: String,
     expires_in: Option<i64>,
     pub creation_time: Option<chrono::DateTime<chrono::offset::FixedOffset>>,
 }
 
+impl std::fmt::Debug for LoginToken {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("LoginToken")
+            .field("expires_in", &self.expires_in)
+            .field("creation_time", &self.creation_time)
+            .finish()
+    }
+}
+
+#[derive(Debug)]
 struct ClientState {
     login_token: LoginToken,
 }
@@ -265,6 +274,19 @@ pub struct Client {
     disable_cert_verification: bool,
 }
 
+impl std::fmt::Debug for Client {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Client")
+            .field("base_url", &self.base_url)
+            .field("websocket_url", &self.websocket_url)
+            .field("state", &self.state)
+            .field("client", &self.client)
+            .field("disable_hostname_check", &self.disable_hostname_check)
+            .field("disable_cert_verification", &self.disable_cert_verification)
+            .finish()
+    }
+}
+
 impl Client {
     /// Create a Client builder
     pub fn builder() -> ClientBuilder {
@@ -302,7 +324,7 @@ impl Client {
             Self::new(builder, client, base_url, login_token)
         } else {
             let text = result.text().await?;
-            debug!("login returned {}", text);
+            tracing::debug!("login returned {}", text);
             Err(Error::LoginFailure(text))
         }
     }
@@ -359,7 +381,7 @@ impl Client {
             let res = result.json().await?;
             Ok(res)
         } else {
-            error!("HTTP call failed");
+            tracing::error!("HTTP call failed");
             Err(Error::WebServer(
                 result.status().as_u16(),
                 result.status().to_string(),
@@ -376,7 +398,7 @@ impl Client {
         let url = self.base_url.join(path)?;
         let token = self.state.lock().await.login_token.token.clone();
 
-        debug!("POST {} {:?}", url, data);
+        tracing::debug!("POST {} {:?}", url, data);
 
         let result = self
             .client
@@ -405,7 +427,7 @@ impl Client {
             })?;
             Ok(resp)
         } else {
-            error!("POST call failed");
+            tracing::error!("POST call failed");
             let status = result.status();
             let resp = result.json().await;
             match resp {
@@ -424,7 +446,7 @@ impl Client {
         let url = self.base_url.join(path)?;
         let token = self.state.lock().await.login_token.token.clone();
 
-        debug!("PUT {} {:?}", url, data);
+        tracing::debug!("PUT {} {:?}", url, data);
 
         let result = self
             .client
@@ -453,7 +475,7 @@ impl Client {
             })?;
             Ok(resp)
         } else {
-            error!("PUT call failed");
+            tracing::error!("PUT call failed");
             let status = result.status();
             let resp = result.json().await;
             match resp {
