@@ -76,6 +76,7 @@ impl Vault {
 }
 
 /// Strongbox key value map
+#[derive(Clone)]
 pub struct KVMap {
     cache: HashMap<String, String>,
 }
