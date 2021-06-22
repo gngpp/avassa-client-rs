@@ -62,11 +62,9 @@
 //!         Default::default())
 //!         .await?;
 //!
-//!     let (_metadata, message) = consumer.consume().await?;
+//!     let message = consumer.consume().await?;
 //!
-//!     let message = String::from_utf8_lossy(&message);
-//!
-//!     assert_eq!(message, "test message");
+//!     assert_eq!(message.payload, "test message");
 //!     Ok(())
 //! }
 //! ```
