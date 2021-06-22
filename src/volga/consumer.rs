@@ -196,6 +196,8 @@ pub struct MessageMetadata {
     /// The number of remaining message the client has indicated it can handle,
     /// see the [Consumer more](struct.Consumer.html) function.
     pub remain: u64,
+    /// The message payload
+    pub payload: String,
 }
 
 /// Volga Consumer
@@ -225,7 +227,7 @@ impl Consumer {
     }
 
     /// Wait for the next message from Volga
-    pub async fn consume(&mut self) -> Result<(MessageMetadata, Vec<u8>)> {
+    pub async fn consume(&mut self) -> Result<MessageMetadata> {
         let timeout = std::time::Duration::from_secs(20);
 
         loop {
@@ -242,27 +244,12 @@ impl Consumer {
                     self.last_seq_no = resp.seqno;
                     tracing::trace!("Metadata: {:?}", resp);
 
-                    // Read the actual message
-                    let msg = super::get_binary_response(&mut self.ws).await?;
-                    tracing::trace!("Message len: {}", msg.len());
-
                     if resp.remain == 0 && self.options.auto_more {
                         self.more(N_IN_AUTO_MORE).await?;
                     }
-                    return Ok((resp, msg));
+                    return Ok(resp);
                 }
             }
-        }
-    }
-
-    /// Wait for a message for a maximum time. At timeout, None is returned.
-    pub async fn consume_with_timeout(
-        &mut self,
-        timeout: std::time::Duration,
-    ) -> Result<Option<(MessageMetadata, Vec<u8>)>> {
-        match tokio::time::timeout(timeout, self.consume()).await {
-            Err(_) => Ok(None),
-            Ok(v) => v.map(Option::Some),
         }
     }
 
