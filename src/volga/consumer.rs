@@ -3,7 +3,6 @@ use crate::Result;
 use chrono::serde::ts_milliseconds;
 use chrono::{DateTime, Utc};
 use futures_util::SinkExt;
-use pin_project::pin_project;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tokio_tungstenite::{client_async, tungstenite::Message as WSMessage};
@@ -201,7 +200,6 @@ pub struct MessageMetadata {
 }
 
 /// Volga Consumer
-#[pin_project]
 pub struct Consumer {
     ws: WebSocketStream,
     options: ConsumerOptions,
@@ -258,28 +256,3 @@ impl Consumer {
         self.last_seq_no
     }
 }
-
-// impl Stream for Consumer {
-//     type Item = Result<(MessageMetadata, Vec<u8>)>;
-
-//     fn poll_next(
-//         self: std::pin::Pin<&mut Self>,
-//         cx: &mut std::task::Context<'_>,
-//     ) -> std::task::Poll<Option<Self::Item>> {
-//         let mut this = self.project();
-//         match core::pin::Pin::new(&mut this.ws).poll_next(cx) {
-//             core::task::Poll::Ready(val) => match val {
-//                 Some(Ok(val)) => {
-//                     // Complicated as we have to wait for two messages, metadata and message
-//                     todo!()
-//                 }
-
-//                 Some(Err(e)) => core::task::Poll::Ready(Some(Err(e.into()))),
-//                 None => core::task::Poll::Ready(None),
-//             },
-//             core::task::Poll::Pending => core::task::Poll::Pending,
-//         }
-//     }
-// }
-#[cfg(test)]
-mod test {}
