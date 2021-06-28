@@ -229,7 +229,6 @@ impl Consumer {
         let timeout = std::time::Duration::from_secs(20);
 
         loop {
-            // First get the control message
             match tokio::time::timeout(timeout, super::get_binary_response(&mut self.ws)).await {
                 Err(_) => {
                     tracing::trace!("Sending ping");
