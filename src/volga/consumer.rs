@@ -237,8 +237,11 @@ impl Consumer {
                 }
                 Ok(msg) => {
                     let msg = msg?;
-                    tracing::info!("msg: '{}'", String::from_utf8_lossy(&msg));
-                    let resp: MessageMetadata = serde_json::from_slice(&msg)?;
+                    // FIXME: Should not have to do this
+                    let msg = String::from_utf8_lossy(&msg);
+                    let msg = msg.chars().filter(|c| !c.is_control()).collect::<String>();
+                    // tracing::info!("msg: '{}'", String::from_utf8_lossy(&msg));
+                    let resp: MessageMetadata = serde_json::from_str(&msg)?;
                     self.last_seq_no = resp.seqno;
                     tracing::trace!("Metadata: {:?}", resp);
 
