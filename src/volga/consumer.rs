@@ -57,7 +57,7 @@ pub enum ConsumerPosition {
 
 impl Default for ConsumerPosition {
     fn default() -> Self {
-        Self::Unread
+        Self::End
     }
 }
 
@@ -74,10 +74,6 @@ pub struct ConsumerBuilder<'a> {
 impl<'a> ConsumerBuilder<'a> {
     /// Create a Volga Consumer Builder
     pub(crate) fn new(avassa_client: &'a crate::Client, name: &str, topic: &str) -> Result<Self> {
-        // let hp = avassa_client
-        //     .base_url
-        //     .host()
-        //     .ok_or(url::ParseError::EmptyHost)?;
         let hp = "localhost";
         let volga_url = url::Url::parse(&format!("volga://{}/{}", hp, topic,))?;
 
@@ -156,20 +152,18 @@ impl<'a> ConsumerBuilder<'a> {
             }),
         };
 
-        let json = serde_json::to_string_pretty(&cmd)?;
-        tracing::debug!("{}", json);
+        tracing::debug!("{:?}", serde_json::to_string_pretty(&cmd));
 
         ws.send(WSMessage::Binary(serde_json::to_vec(&cmd)?))
             .await?;
 
         super::get_ok_volga_response(&mut ws).await?;
 
-        tracing::debug!("Successfully conected consumer to {}", self.volga_url);
+        tracing::debug!("Successfully connected consumer to {}", self.volga_url);
         let mut consumer = Consumer {
             ws,
             options: self.options,
             last_seq_no: 0,
-            // last_timestamp: chrono::Utc::now(),
         };
 
         if consumer.options.auto_more {
@@ -204,7 +198,6 @@ pub struct Consumer {
     ws: WebSocketStream,
     options: ConsumerOptions,
     last_seq_no: u64,
-    // last_timestamp: chrono::DateTime<chrono::Utc>,
 }
 
 impl Consumer {
@@ -229,6 +222,7 @@ impl Consumer {
         let timeout = std::time::Duration::from_secs(20);
 
         loop {
+            // FIXME: should not have to send pings.
             match tokio::time::timeout(timeout, super::get_binary_response(&mut self.ws)).await {
                 Err(_) => {
                     tracing::trace!("Sending ping");
@@ -237,11 +231,7 @@ impl Consumer {
                 }
                 Ok(msg) => {
                     let msg = msg?;
-                    // FIXME: Should not have to do this
-                    let msg = String::from_utf8_lossy(&msg);
-                    let msg = msg.chars().filter(|c| !c.is_control()).collect::<String>();
-                    // tracing::info!("msg: '{}'", String::from_utf8_lossy(&msg));
-                    let resp: MessageMetadata = serde_json::from_str(&msg)?;
+                    let resp: MessageMetadata = serde_json::from_slice(&msg)?;
                     self.last_seq_no = resp.seqno;
                     tracing::trace!("Metadata: {:?}", resp);
 

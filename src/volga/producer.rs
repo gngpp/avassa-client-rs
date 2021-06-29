@@ -82,15 +82,14 @@ impl<'a> ProducerBuilder<'a> {
             "opts": self.options,
         });
 
-        let json = serde_json::to_string_pretty(&cmd)?;
-        tracing::trace!("{}", json);
+        tracing::debug!("{:?}", serde_json::to_string_pretty(&cmd));
 
         ws.send(WSMessage::Binary(serde_json::to_vec(&cmd)?))
             .await?;
 
-        tracing::trace!("Waiting for ok");
+        tracing::debug!("Waiting for ok");
         super::get_ok_volga_response(&mut ws).await?;
-        tracing::trace!("Successfully connected producer {}", self.volga_url);
+        tracing::debug!("Successfully connected producer {}", self.volga_url);
         Ok(Producer { ws })
     }
 }
