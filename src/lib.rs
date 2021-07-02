@@ -379,7 +379,6 @@ impl Client {
             let res = result.json().await?;
             Ok(res)
         } else {
-            tracing::error!("HTTP call failed");
             Err(Error::WebServer(
                 result.status().as_u16(),
                 result.status().to_string(),
