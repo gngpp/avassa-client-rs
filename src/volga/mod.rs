@@ -27,20 +27,6 @@ pub enum Persistence {
     RAM,
 }
 
-/// Volga stream mode
-#[derive(Clone, Copy, Debug, Serialize)]
-pub enum Mode {
-    /// Consumer names has to be unique
-    #[serde(rename = "exclusive")]
-    Exclusive,
-    /// Messages are sent to consumers, with the same name, in a round-robin fashon.
-    #[serde(rename = "shared")]
-    Shared,
-    /// Act as a backup/standby consumer
-    #[serde(rename = "standby")]
-    Standby,
-}
-
 /// Volga options for consumers and producers
 #[derive(Clone, Copy, Debug, Serialize)]
 pub struct Options {
@@ -51,8 +37,6 @@ pub struct Options {
     pub replication_factor: u32,
     /// Volga stream persistence
     pub persistence: Persistence,
-    /// Volga stream mode
-    pub mode: Mode,
 }
 
 impl Default for Options {
@@ -61,7 +45,6 @@ impl Default for Options {
             create: true,
             replication_factor: 1,
             persistence: Persistence::Disk,
-            mode: Mode::Exclusive,
         }
     }
 }

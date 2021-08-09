@@ -1,6 +1,5 @@
 use super::{Options, WebSocketStream};
 use crate::Result;
-use chrono::serde::ts_milliseconds;
 use chrono::{DateTime, Utc};
 use futures_util::SinkExt;
 use serde::{Deserialize, Serialize};
@@ -9,15 +8,34 @@ use tokio_tungstenite::{client_async, tungstenite::Message as WSMessage};
 
 const N_IN_AUTO_MORE: usize = 5;
 
+/// Volga stream mode
+#[derive(Clone, Copy, Debug, Serialize)]
+pub enum Mode {
+    /// Consumer names has to be unique
+    #[serde(rename = "exclusive")]
+    Exclusive,
+    /// Messages are sent to consumers, with the same name, in a round-robin fashon.
+    #[serde(rename = "shared")]
+    Shared,
+    /// Act as a backup/standby consumer
+    #[serde(rename = "standby")]
+    Standby,
+}
+
 /// [`Consumer`] options
 #[derive(Clone, Copy, Debug)]
 pub struct ConsumerOptions {
     /// Volga general options
     pub volga_options: Options,
+
     /// Starting position
     pub position: ConsumerPosition,
+
     /// If set, the client will automatically request more items
     pub auto_more: bool,
+
+    /// Volga stream mode
+    pub mode: Mode,
 }
 
 impl Default for ConsumerOptions {
@@ -30,6 +48,7 @@ impl Default for ConsumerOptions {
             },
             position: Default::default(),
             auto_more: true,
+            mode: Mode::Exclusive,
         }
     }
 }
@@ -179,16 +198,17 @@ impl<'a> ConsumerBuilder<'a> {
 pub struct MessageMetadata {
     /// Consumer name
     pub name: String,
-    /// True if a control message
-    pub control: bool,
+
     /// Timestamp (milliseconds since epoch)
-    #[serde(with = "ts_milliseconds")]
     pub time: DateTime<Utc>,
+
     /// Sequence number
     pub seqno: u64,
+
     /// The number of remaining message the client has indicated it can handle,
     /// see the [Consumer more](struct.Consumer.html) function.
     pub remain: u64,
+
     /// The message payload
     pub payload: String,
 }
