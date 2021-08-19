@@ -27,7 +27,6 @@ tokio-stream = "0.1"
 tokio-tungstenite = { version="0.15", default_features=false, features = ["native-tls"] }
 tracing = "0.1"
 tracing-futures="0.2"
-tungstenite = { version="0.14", default_features=false }
 url = "2"
 
 [dev-dependencies]

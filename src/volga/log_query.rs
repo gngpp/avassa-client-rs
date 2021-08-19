@@ -172,14 +172,14 @@ pin_project! {
 impl QueryStream {
     pub(crate) async fn new(avassa_client: &crate::Client, query: &Query) -> Result<Self> {
         let ws_url = avassa_client.websocket_url.join("volga")?;
-        let request = tungstenite::handshake::client::Request::builder()
+        let request = tokio_tungstenite::tungstenite::handshake::client::Request::builder()
             .uri(ws_url.to_string())
             .header(
                 "Authorization",
                 format!("Bearer {}", avassa_client.bearer_token().await),
             )
             .body(())
-            .map_err(tungstenite::error::Error::HttpFormat)?;
+            .map_err(tokio_tungstenite::tungstenite::error::Error::HttpFormat)?;
         let tls = avassa_client.open_tls_stream().await?;
         let (mut ws, _) = client_async(request, tls).await?;
 

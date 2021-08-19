@@ -134,14 +134,14 @@ impl<'a> ConsumerBuilder<'a> {
 
     /// Connect and create a `Consumer`
     pub async fn connect(self) -> Result<Consumer> {
-        let request = tungstenite::handshake::client::Request::builder()
+        let request = tokio_tungstenite::tungstenite::handshake::client::Request::builder()
             .uri(self.ws_url.to_string())
             .header(
                 "Authorization",
                 format!("Bearer {}", self.avassa_client.bearer_token().await),
             )
             .body(())
-            .map_err(tungstenite::error::Error::HttpFormat)?;
+            .map_err(tokio_tungstenite::tungstenite::error::Error::HttpFormat)?;
         let tls = self.avassa_client.open_tls_stream().await?;
         let (mut ws, _) = client_async(request, tls).await?;
 

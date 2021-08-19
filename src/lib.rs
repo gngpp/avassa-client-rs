@@ -109,7 +109,7 @@ pub enum Error {
 
     /// Websocket error
     #[error("Websocket error: {0}")]
-    WebSocket(#[from] tungstenite::Error),
+    WebSocket(#[from] tokio_tungstenite::tungstenite::Error),
 
     /// JSON serialization/deserialization error
     #[error("Serde JSON error: {0}")]
