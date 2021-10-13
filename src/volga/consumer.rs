@@ -38,6 +38,26 @@ pub struct ConsumerOptions {
     pub mode: Mode,
 }
 
+/// Volga Open Consumer message
+#[derive(Clone, Copy, Debug, Serialize)]
+pub struct OpenConsumer<'a> {
+    op: &'a str,
+    location: &'a str,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "nat-site")]
+    nat_site: Option<&'a str>,
+    topic: &'a str,
+    name: &'a str,
+    position: &'a str,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "position-sequence-number")]
+    position_sequence_number: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "position-timestamp")]
+    position_timestamp: Option<chrono::DateTime<chrono::Local>>,
+    opts: Options
+}
+
 impl Default for ConsumerOptions {
     fn default() -> Self {
         Self {
@@ -83,26 +103,27 @@ impl Default for ConsumerPosition {
 /// [`Consumer`] builder
 pub struct ConsumerBuilder<'a> {
     avassa_client: &'a crate::Client,
-    volga_url: url::Url,
+    location: &'a str,
+    nat_site: Option<&'a str>,
+    topic: &'a str,
     ws_url: url::Url,
-    name: String,
+    name: &'a str,
     options: ConsumerOptions,
 }
 
 /// Created from the Avassa Client.
 impl<'a> ConsumerBuilder<'a> {
     /// Create a Volga Consumer Builder
-    pub(crate) fn new(avassa_client: &'a crate::Client, name: &str, topic: &str) -> Result<Self> {
-        let hp = "localhost";
-        let volga_url = url::Url::parse(&format!("volga://{}/{}", hp, topic,))?;
-
+    pub(crate) fn new(avassa_client: &'a crate::Client, name: &'a str, topic: &'a str) -> Result<Self> {
         let ws_url = avassa_client.websocket_url.join("volga")?;
 
         Ok(Self {
             avassa_client,
-            volga_url,
+            location: "local",
+            nat_site: None,
+            topic,
             ws_url,
-            name: name.to_owned(),
+            name,
             options: Default::default(),
         })
     }
@@ -110,19 +131,19 @@ impl<'a> ConsumerBuilder<'a> {
     /// Create a Volga NAT Consumer Builder
     pub(crate) fn new_nat(
         avassa_client: &'a crate::Client,
-        name: &str,
-        topic: &str,
-        site: &str,
+        name: &'a str,
+        topic: &'a str,
+        site: &'a str,
     ) -> Result<Self> {
-        let volga_url = url::Url::parse(&format!("volga-nat://{}/{}", site, topic,))?;
-
         let ws_url = avassa_client.websocket_url.join("volga")?;
 
         Ok(Self {
             avassa_client,
-            volga_url,
+            location: "nat-site",
+            nat_site: Some(site),
+            topic,
             ws_url,
-            name: name.to_owned(),
+            name,
             options: Default::default(),
         })
     }
@@ -144,31 +165,28 @@ impl<'a> ConsumerBuilder<'a> {
             .map_err(tokio_tungstenite::tungstenite::error::Error::HttpFormat)?;
         let tls = self.avassa_client.open_tls_stream().await?;
         let (mut ws, _) = client_async(request, tls).await?;
-
-        let cmd = match self.options.position {
-            super::ConsumerPosition::SequenceNumber(seqno) => json!({
-                "op": "open-consumer",
-                "url": self.volga_url.as_str(),
-                "name": self.name,
-                "position": "seqno",
-                "position-sequence-number": seqno,
-                "opts": self.options.volga_options,
-            }),
-            super::ConsumerPosition::TimeStamp(ts) => json!({
-                "op": "open-consumer",
-                "url": self.volga_url.as_str(),
-                "name": self.name,
-                "position": "timestamp",
-                "position-timestamp": ts,
-                "opts": self.options.volga_options,
-            }),
-            _ => json!({
-                "op": "open-consumer",
-                "url": self.volga_url.as_str(),
-                "name": self.name,
-                "position": self.options.position,
-                "opts": self.options.volga_options,
-            }),
+        let cmd = OpenConsumer {
+            op: "open-consumer",
+            location: self.location,
+            nat_site: self.nat_site,
+            topic: self.topic,
+            name: self.name,
+            position: match self.options.position {
+                super::ConsumerPosition::SequenceNumber(_seqno) => "seqno",
+                super::ConsumerPosition::TimeStamp(_ts) => "timestamp",
+                super::ConsumerPosition::Beginning => "beginning",
+                super::ConsumerPosition::End => "end",
+                super::ConsumerPosition::Unread => "unread",
+            },
+            position_sequence_number: match self.options.position {
+                super::ConsumerPosition::SequenceNumber(seqno) => Some(seqno),
+                _ => None
+            },
+            position_timestamp: match self.options.position {
+                super::ConsumerPosition::TimeStamp(ts) => Some(ts),
+                _ => None
+            },
+            opts: self.options.volga_options
         };
 
         tracing::debug!("{:?}", serde_json::to_string_pretty(&cmd));
@@ -178,7 +196,7 @@ impl<'a> ConsumerBuilder<'a> {
 
         super::get_ok_volga_response(&mut ws).await?;
 
-        tracing::debug!("Successfully connected consumer to {}", self.volga_url);
+        tracing::debug!("Successfully connected consumer to topic {}", self.topic);
         let mut consumer = Consumer {
             ws,
             options: self.options,

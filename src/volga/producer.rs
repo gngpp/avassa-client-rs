@@ -8,7 +8,9 @@ use tokio_tungstenite::{client_async, tungstenite::Message as WSMessage};
 /// [`Producer`] builder
 pub struct ProducerBuilder<'a> {
     avassa_client: &'a crate::Client,
-    volga_url: url::Url,
+    location: &'a str,
+    nat_site: Option<&'a str>,
+    topic: &'a str,
     ws_url: url::Url,
     name: &'a str,
     options: Options,
@@ -19,16 +21,16 @@ impl<'a> ProducerBuilder<'a> {
     pub fn new(
         avassa_client: &'a crate::Client,
         name: &'a str,
-        topic: &str,
+        topic: &'a str,
         options: Options,
     ) -> Result<Self> {
-        let volga_url = url::Url::parse(&format!("volga://localhost/{}", topic,))?;
-
         let ws_url = avassa_client.websocket_url.join("volga")?;
 
         Ok(Self {
             avassa_client,
-            volga_url,
+            location: "local",
+            nat_site: None,
+            topic,
             ws_url,
             name,
             options,
@@ -38,17 +40,17 @@ impl<'a> ProducerBuilder<'a> {
     pub(crate) fn new_nat(
         avassa_client: &'a crate::Client,
         name: &'a str,
-        topic: &str,
-        udc: &str,
+        topic: &'a str,
+        udc: &'a str,
         options: Options,
     ) -> Result<Self> {
-        let volga_url = url::Url::parse(&format!("volga-nat://{}/{}", udc, topic,))?;
-
         let ws_url = avassa_client.websocket_url.join("volga")?;
 
         Ok(Self {
             avassa_client,
-            volga_url,
+            location: "nat-site",
+            nat_site: Some(udc),
+            topic,
             ws_url,
             name,
             options,
@@ -75,12 +77,23 @@ impl<'a> ProducerBuilder<'a> {
         let tls = self.avassa_client.open_tls_stream().await?;
         let (mut ws, _) = client_async(request, tls).await?;
 
-        let cmd = json!({
-            "op": "open-producer",
-            "url": self.volga_url.as_str(),
-            "name": self.name,
-            "opts": self.options,
-        });
+        let cmd =
+            if self.location == "nat-site" {
+                json!({
+                    "op": "open-producer",
+                    "location": self.location,
+                    "nat-site": self.nat_site.unwrap(),
+                    "topic": self.topic,
+                    "name": self.name,
+                    "opts": self.options,
+                })} else {
+                json!({
+                    "op": "open-producer",
+                    "location": self.location,
+                    "topic": self.topic,
+                    "name": self.name,
+                    "opts": self.options,                
+                })};
 
         tracing::debug!("{:?}", serde_json::to_string_pretty(&cmd));
 
@@ -89,7 +102,7 @@ impl<'a> ProducerBuilder<'a> {
 
         tracing::debug!("Waiting for ok");
         super::get_ok_volga_response(&mut ws).await?;
-        tracing::debug!("Successfully connected producer {}", self.volga_url);
+        tracing::debug!("Successfully connected producer to topic {}", self.topic);
         Ok(Producer { ws })
     }
 }
