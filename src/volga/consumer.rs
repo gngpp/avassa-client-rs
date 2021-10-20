@@ -55,7 +55,7 @@ pub struct OpenConsumer<'a> {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "position-timestamp")]
     position_timestamp: Option<chrono::DateTime<chrono::Local>>,
-    opts: Options
+    opts: Options,
 }
 
 impl Default for ConsumerOptions {
@@ -114,7 +114,11 @@ pub struct ConsumerBuilder<'a> {
 /// Created from the Avassa Client.
 impl<'a> ConsumerBuilder<'a> {
     /// Create a Volga Consumer Builder
-    pub(crate) fn new(avassa_client: &'a crate::Client, name: &'a str, topic: &'a str) -> Result<Self> {
+    pub(crate) fn new(
+        avassa_client: &'a crate::Client,
+        name: &'a str,
+        topic: &'a str,
+    ) -> Result<Self> {
         let ws_url = avassa_client.websocket_url.join("volga")?;
 
         Ok(Self {
@@ -180,13 +184,13 @@ impl<'a> ConsumerBuilder<'a> {
             },
             position_sequence_number: match self.options.position {
                 super::ConsumerPosition::SequenceNumber(seqno) => Some(seqno),
-                _ => None
+                _ => None,
             },
             position_timestamp: match self.options.position {
                 super::ConsumerPosition::TimeStamp(ts) => Some(ts),
-                _ => None
+                _ => None,
             },
-            opts: self.options.volga_options
+            opts: self.options.volga_options,
         };
 
         tracing::debug!("{:?}", serde_json::to_string_pretty(&cmd));
@@ -217,8 +221,11 @@ pub struct MessageMetadata {
     /// Consumer name
     pub name: String,
 
-    /// Timestamp (milliseconds since epoch)
+    /// Timestamp
     pub time: DateTime<Utc>,
+
+    /// Milliseconds since epoch
+    pub mtime: u64,
 
     /// Sequence number
     pub seqno: u64,
@@ -228,7 +235,7 @@ pub struct MessageMetadata {
     pub remain: u64,
 
     /// The message payload
-    pub payload: String,
+    pub payload: serde_json::Value,
 }
 
 /// Volga Consumer
@@ -269,6 +276,8 @@ impl Consumer {
                 }
                 Ok(msg) => {
                     let msg = msg?;
+                    // tracing::error!("{}", String::from_utf8_lossy(&msg));
+
                     let resp: MessageMetadata = serde_json::from_slice(&msg)?;
                     self.last_seq_no = resp.seqno;
                     tracing::trace!("Metadata: {:?}", resp);
