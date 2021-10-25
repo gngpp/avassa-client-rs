@@ -241,7 +241,7 @@ impl ClientBuilder {
             "role-id": role_id,
             "secret-id": secret_id,
         });
-        Client::do_login(&self, base_url, url, data).await
+        Client::do_login(self, base_url, url, data).await
     }
 
     /// Login to an avassa Control Tower or Edge Enforcer instance. If possible,
@@ -255,7 +255,13 @@ impl ClientBuilder {
             "username":username,
             "password":password
         });
-        Client::do_login(&self, base_url, url, data).await
+        Client::do_login(self, base_url, url, data).await
+    }
+}
+
+impl Default for ClientBuilder {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -489,7 +495,7 @@ impl Client {
         topic: &str,
         options: volga::Options,
     ) -> Result<volga::Producer> {
-        crate::volga::ProducerBuilder::new(&self, producer_name, topic, options)?
+        crate::volga::ProducerBuilder::new(self, producer_name, topic, options)?
             .set_options(options)
             .connect()
             .await
@@ -503,7 +509,7 @@ impl Client {
         site: &str,
         options: volga::Options,
     ) -> Result<volga::Producer> {
-        crate::volga::ProducerBuilder::new_nat(&self, producer_name, topic, site, options)?
+        crate::volga::ProducerBuilder::new_nat(self, producer_name, topic, site, options)?
             .set_options(options)
             .connect()
             .await
@@ -516,7 +522,7 @@ impl Client {
         topic: &str,
         options: crate::volga::ConsumerOptions,
     ) -> Result<volga::Consumer> {
-        crate::volga::ConsumerBuilder::new(&self, consumer_name, topic)?
+        crate::volga::ConsumerBuilder::new(self, consumer_name, topic)?
             .set_options(options)
             .connect()
             .await
@@ -530,7 +536,7 @@ impl Client {
         site: &str,
         options: crate::volga::ConsumerOptions,
     ) -> Result<volga::Consumer> {
-        crate::volga::ConsumerBuilder::new_nat(&self, consumer_name, topic, site)?
+        crate::volga::ConsumerBuilder::new_nat(self, consumer_name, topic, site)?
             .set_options(options)
             .connect()
             .await

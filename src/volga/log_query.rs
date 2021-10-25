@@ -169,6 +169,12 @@ pin_project! {
     }
 }
 
+impl Default for Query {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl QueryStream {
     pub(crate) async fn new(avassa_client: &crate::Client, query: &Query) -> Result<Self> {
         let ws_url = avassa_client.websocket_url.join("volga")?;

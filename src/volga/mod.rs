@@ -54,7 +54,7 @@ async fn get_binary_response(ws: &mut WebSocketStream) -> Result<Vec<u8>> {
         let resp = ws
             .next()
             .await
-            .ok_or(Error::Volga(Some("Expected websocket message".to_string())))??;
+            .ok_or_else(|| Error::Volga(Some("Expected websocket message".to_string())))??;
 
         match resp {
             tokio_tungstenite::tungstenite::Message::Pong(_) => continue,

@@ -20,18 +20,16 @@ pub struct Vault {
 impl Vault {
     /// List all secret stores
     pub async fn list(client: &Client) -> Result<Vec<String>> {
-        let resp: serde_json::Value = client
-            .get_json(&format!("{}", SBOX_VAULTS), Some(&[("keys", "")]))
-            .await?;
+        let resp: serde_json::Value = client.get_json(SBOX_VAULTS, Some(&[("keys", "")])).await?;
 
         resp.as_array()
-            .ok_or(crate::Error::API("Expected an array".into()))?
-            .into_iter()
+            .ok_or_else(|| crate::Error::API("Expected an array".into()))?
+            .iter()
             .inspect(|s| tracing::debug!("{:#?}", s))
             .map(|s| {
                 s.as_str()
                     .map(str::to_string)
-                    .ok_or(crate::Error::API("Expected a name".into()))
+                    .ok_or_else(|| crate::Error::API("Expected a name".into()))
             })
             .collect()
     }
@@ -55,7 +53,7 @@ impl Vault {
 
         let kv = json
             .as_object()
-            .ok_or(Error::general("expected a JSON object in kv-map"))?;
+            .ok_or_else(|| Error::general("expected a JSON object in kv-map"))?;
 
         let mut cache = HashMap::new();
         if let Some(data) = kv.get("data").map(|d| d.as_object()).flatten() {
@@ -63,7 +61,7 @@ impl Vault {
                 cache.insert(
                     k.clone(),
                     v.as_str()
-                        .ok_or(Error::general("Expected secret value to be a string"))?
+                        .ok_or_else(|| Error::general("Expected secret value to be a string"))?
                         .to_string(),
                 );
             }
