@@ -27,6 +27,23 @@ pub enum Persistence {
     RAM,
 }
 
+/// Format of the data on the volga topic
+#[derive(Clone, Copy, Debug, Serialize)]
+pub enum Format {
+    /// JSON format
+    #[serde(rename = "json")]
+    JSON,
+    /// String encoded
+    #[serde(rename = "bytes")]
+    String,
+}
+
+impl Default for Format {
+    fn default() -> Self {
+        Self::JSON
+    }
+}
+
 /// Volga options for consumers and producers
 #[derive(Clone, Copy, Debug, Serialize)]
 pub struct Options {
@@ -37,6 +54,9 @@ pub struct Options {
     pub replication_factor: u32,
     /// Volga stream persistence
     pub persistence: Persistence,
+
+    /// Volga format
+    pub format: Format,
 }
 
 impl Default for Options {
@@ -45,6 +65,7 @@ impl Default for Options {
             create: true,
             replication_factor: 1,
             persistence: Persistence::Disk,
+            format: Format::default(),
         }
     }
 }
