@@ -412,23 +412,23 @@ impl Client {
             .await?;
 
         if result.status().is_success() {
-            use std::error::Error;
-            let resp = result.json().await.or_else(|e| match e {
-                e if e.is_decode() => {
-                    match e
-                        .source()
-                        .map(|e| e.downcast_ref::<serde_json::Error>())
-                        .flatten()
-                    {
-                        Some(e) if e.is_eof() => {
-                            Ok(serde_json::Value::Object(serde_json::Map::new()))
-                        }
-                        _ => Err(e),
-                    }
-                }
-                e => Err(e),
-            })?;
-            Ok(resp)
+            let resp = result.bytes().await?;
+
+            let mut responses: Vec<serde_json::Value> = Vec::new();
+            let decoder = serde_json::Deserializer::from_slice(&resp);
+
+            for v in decoder.into_iter() {
+                responses.push(v?);
+            }
+
+            if responses.len() > 1 {
+                // Convert to a JSON array
+                Ok(serde_json::Value::Array(responses))
+            } else if responses.len() == 1 {
+                Ok(responses.into_iter().next().unwrap())
+            } else {
+                Ok(serde_json::Value::Object(Default::default()))
+            }
         } else {
             tracing::error!("POST call failed");
             let status = result.status();
@@ -440,7 +440,7 @@ impl Client {
         }
     }
 
-    /// POST arbitrary JSON to a path
+    /// PUT arbitrary JSON to a path
     pub async fn put_json(
         &self,
         path: &str,
@@ -486,6 +486,11 @@ impl Client {
                 Err(_) => Err(Error::WebServer(status.as_u16(), status.to_string())),
             }
         }
+    }
+
+    /// Remove me
+    pub fn get_client(&self) -> reqwest::Client {
+        self.client.clone()
     }
 
     /// Open a volga producer on a topic
