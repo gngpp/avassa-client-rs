@@ -11,7 +11,7 @@ pub mod tls;
 
 const SBOX_VAULTS: &str = "v1/config/strongbox/vault";
 
-/// A Strobox vault can contain one or more `KVMap` key value stores.
+/// A Strobox vault can contain one or more `Secret` key value stores.
 pub struct Vault {
     client: Client,
     vault_url: String,
@@ -45,15 +45,15 @@ impl Vault {
         })
     }
 
-    /// Open a KV map
-    pub async fn open_kv_map(&self, name: &str) -> Result<KVMap> {
-        let map_url = format!("{}/kv-maps/{}", self.vault_url, name);
+    /// Open a secret
+    pub async fn open_secrets(&self, name: &str) -> Result<Secrets> {
+        let map_url = format!("{}/secrets/{}", self.vault_url, name);
 
         let json: serde_json::Value = self.client.get_json(&map_url, None).await?;
 
         let kv = json
             .as_object()
-            .ok_or_else(|| Error::general("expected a JSON object in kv-map"))?;
+            .ok_or_else(|| Error::general("expected a JSON object in secrets"))?;
 
         let mut cache = HashMap::new();
         if let Some(data) = kv.get("data").map(|d| d.as_object()).flatten() {
@@ -69,24 +69,24 @@ impl Vault {
 
         tracing::debug!("Successfully loaded {}", name);
 
-        Ok(KVMap { cache })
+        Ok(Secrets { cache })
     }
 }
 
 /// Strongbox key value map
 #[derive(Clone)]
-pub struct KVMap {
+pub struct Secrets {
     cache: HashMap<String, String>,
 }
 
-impl KVMap {
+impl Secrets {
     /// Try to get a value
     pub fn get(&self, key: &str) -> Option<&String> {
         self.cache.get(key)
     }
 }
 
-impl std::fmt::Debug for KVMap {
+impl std::fmt::Debug for Secrets {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_list().entries(self.cache.keys()).finish()
     }
