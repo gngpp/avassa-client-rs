@@ -77,6 +77,9 @@ use serde_json::json;
 pub mod strongbox;
 pub mod volga;
 
+#[cfg(feature = "utilities")]
+pub mod utilities;
+
 /// Description of an error from the REST APIs
 #[derive(Debug, Deserialize)]
 pub struct RESTError {

@@ -3,13 +3,16 @@ name = "avassa-client"
 # When releasing
 # - Update version
 # - Create tag
-version = "0.1.2"
+version = "0.1.3"
 authors = ["Fredrik Jansson <fj@avassa.io>"]
 license = "Apache-2.0"
 edition = "2021"
 documentation = "https://docs.rs/avassa-client"
 description = "Library for integrating with the Avassa APIs"
 repository="https://gitlab.com/avassa-public/avassa-client-rs"
+
+[features]
+utilities = []
 
 [dependencies]
 chrono = { version = "0.4", features = ["serde"] }
