@@ -427,13 +427,13 @@ impl Client {
                 responses.push(v?);
             }
 
-            if responses.len() > 1 {
-                // Convert to a JSON array
-                Ok(serde_json::Value::Array(responses))
-            } else if responses.len() == 1 {
-                Ok(responses.into_iter().next().unwrap())
-            } else {
-                Ok(serde_json::Value::Object(Default::default()))
+            match responses.len() {
+                0 => Ok(serde_json::Value::Object(Default::default())),
+                1 => Ok(responses.into_iter().next().unwrap()),
+                _ => {
+                    // Convert to a JSON array
+                    Ok(serde_json::Value::Array(responses))
+                }
             }
         } else {
             tracing::error!("POST call failed");
