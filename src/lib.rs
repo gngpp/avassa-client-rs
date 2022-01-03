@@ -80,6 +80,9 @@ pub mod volga;
 #[cfg(feature = "utilities")]
 pub mod utilities;
 
+#[cfg(feature = "login-helper")]
+pub mod login_helper;
+
 /// Description of an error from the REST APIs
 #[derive(Debug, Deserialize)]
 pub struct RESTError {
