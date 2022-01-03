@@ -1,10 +1,9 @@
 [package]
 name = "avassa-client"
 # When releasing
-# - Update doc url
 # - Update version
 # - Create tag
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Fredrik Jansson <fj@avassa.io>"]
 license = "Apache-2.0"
 edition = "2021"
