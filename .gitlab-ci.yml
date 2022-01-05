@@ -12,7 +12,7 @@ stages:
   - export CARGO_HOME="${PWD}/.cargo"
 
 test:
-  stage: build-test
+  stage: test
   image: rust:1-alpine
   before_script:
     - *alpine_before
