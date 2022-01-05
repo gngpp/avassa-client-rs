@@ -1,27 +1,20 @@
 cache:
   paths:
     - alpine-target
+    - .cargo
 
 stages:
-  - build-test
-  - downstream
+  - test
 
 .alpine_before: &alpine_before
   - apk add libc-dev openssl-dev
   - rustup component add rustfmt
+  - export CARGO_HOME="${PWD}/.cargo"
 
-build-test:
+test:
   stage: build-test
   image: rust:1-alpine
-  # tags:
-  #   - avassa-docker
   before_script:
     - *alpine_before
   script:
-    - cargo build --verbose
     - cargo test --verbose
-
-rust-client-utilities:
-  stage: downstream
-  trigger:
-    project: avassa-public/avassa-client-rust-utilities
