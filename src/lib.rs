@@ -86,16 +86,19 @@ pub mod login_helper;
 /// Description of an error from the REST APIs
 #[derive(Debug, Deserialize)]
 pub struct RESTError {
+    /// Error message
     #[serde(rename = "error-message")]
-    error_message: String,
+    pub error_message: String,
+    /// Additonal error information
     #[serde(rename = "error-info")]
-    error_info: serde_json::Value,
+    pub error_info: serde_json::Value,
 }
 
 /// List of REST API error messages
 #[derive(Debug, Deserialize)]
 pub struct RESTErrorList {
-    errors: Vec<RESTError>,
+    /// Error messages
+    pub errors: Vec<RESTError>,
 }
 
 /// Error returned by client functions
