@@ -31,19 +31,6 @@ pub mod config {}
 
 /// State types
 pub mod state {
-    use serde::Deserialize;
-
-    /// Returned from /system/sites
-    #[derive(Debug, Deserialize)]
-    pub struct Site {
-        /// DC Name
-        pub name: String,
-        /// DC Type
-        #[serde(rename = "type")]
-        pub site_type: super::SiteType,
-        /// Optional DC Location
-        pub location: Option<super::SiteLocation>,
-        /// Site labels
-        pub labels: std::collections::HashMap<String, String>,
-    }
+    pub mod application;
+    pub mod site;
 }

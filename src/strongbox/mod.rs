@@ -9,7 +9,7 @@ use crate::Result;
 /// Certificate API
 pub mod tls;
 
-const SBOX_VAULTS: &str = "v1/config/strongbox/vault";
+const SBOX_VAULTS: &str = "v1/state/strongbox/vault";
 
 /// A Strobox vault can contain one or more `Secret` key value stores.
 pub struct Vault {
@@ -56,7 +56,7 @@ impl Vault {
             .ok_or_else(|| Error::general("expected a JSON object in secrets"))?;
 
         let mut cache = HashMap::new();
-        if let Some(data) = kv.get("data").map(|d| d.as_object()).flatten() {
+        if let Some(data) = kv.get("dict").map(|d| d.as_object()).flatten() {
             for (k, v) in data.into_iter() {
                 cache.insert(
                     k.clone(),

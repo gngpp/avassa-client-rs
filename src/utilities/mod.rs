@@ -11,7 +11,7 @@ pub mod state {
     use crate::Client;
 
     /// Returns a list of DCs a tenant can access
-    pub async fn assigned_sites(client: &Client) -> crate::Result<Vec<types::state::Site>> {
+    pub async fn assigned_sites(client: &Client) -> crate::Result<Vec<types::state::site::Site>> {
         let sites = client.get_json("/v1/state/assigned-sites", None).await?;
         Ok(sites)
     }
@@ -28,5 +28,39 @@ pub mod state {
             .flatten()
             .ok_or_else(|| crate::Error::general("Failed to get cluster_id"))
             .map(Into::into)
+    }
+
+    /// Return an applications service instance state
+    pub async fn service_instance(
+        client: &Client,
+        application: &str,
+        service_instance: &str,
+    ) -> crate::Result<types::state::application::ServiceInstance> {
+        let si = client
+            .get_json(
+                &format!(
+                    "/v1/state/applications/{}/service-instances/{}",
+                    application, service_instance
+                ),
+                None,
+            )
+            .await?;
+
+        Ok(si)
+    }
+
+    /// Return an applications service instances state
+    pub async fn service_instances(
+        client: &Client,
+        application: &str,
+    ) -> crate::Result<Vec<types::state::application::ServiceInstance>> {
+        let si = client
+            .get_json(
+                &format!("/v1/state/applications/{}/service-instances", application),
+                None,
+            )
+            .await?;
+
+        Ok(si)
     }
 }
