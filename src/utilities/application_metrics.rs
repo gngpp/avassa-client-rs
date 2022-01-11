@@ -52,7 +52,7 @@ pub struct MetricEntry {
     /// Container metrics
     pub per_container: Option<ContainerMetric>,
     /// Application metrics
-    per_application: Option<ApplicationMetric>,
+    pub per_application: Option<ApplicationMetric>,
 }
 
 /// Matrics
