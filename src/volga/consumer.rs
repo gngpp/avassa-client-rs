@@ -216,7 +216,7 @@ impl<'a> ConsumerBuilder<'a> {
 }
 
 /// Metadata on the Volga message received in 'Consumer::consume'
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct MessageMetadata {
     /// Consumer name
     pub name: String,
