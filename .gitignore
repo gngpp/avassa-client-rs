@@ -1,3 +1,4 @@
 /target
 /alpine-target
 *.swp
+.DS_Store
