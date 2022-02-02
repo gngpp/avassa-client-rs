@@ -3,7 +3,7 @@ name = "avassa-client"
 # When releasing
 # - Update version
 # - Create tag
-version = "0.1.5"
+version = "0.1.6"
 authors = ["Fredrik Jansson <fj@avassa.io>"]
 license = "Apache-2.0"
 edition = "2021"
