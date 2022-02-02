@@ -33,4 +33,5 @@ pub mod config {}
 pub mod state {
     pub mod application;
     pub mod site;
+    pub mod volga;
 }

@@ -17,7 +17,7 @@ type WebSocketStream =
     tokio_tungstenite::WebSocketStream<tokio_native_tls::TlsStream<tokio::net::TcpStream>>;
 
 /// Volga stream persistence
-#[derive(Clone, Copy, Debug, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq)]
 pub enum Persistence {
     /// Persist messages to disk
     #[serde(rename = "disk")]
@@ -28,7 +28,7 @@ pub enum Persistence {
 }
 
 /// Format of the data on the volga topic
-#[derive(Clone, Copy, Debug, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq)]
 pub enum Format {
     /// JSON format
     #[serde(rename = "json")]

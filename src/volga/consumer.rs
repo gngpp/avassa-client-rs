@@ -9,7 +9,7 @@ use tokio_tungstenite::{client_async, tungstenite::Message as WSMessage};
 const N_IN_AUTO_MORE: usize = 5;
 
 /// Volga stream mode
-#[derive(Clone, Copy, Debug, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq)]
 pub enum Mode {
     /// Consumer names has to be unique
     #[serde(rename = "exclusive")]
