@@ -47,7 +47,7 @@ pub mod ca {
         ca_name: &str,
         role: &Role,
     ) -> Result<()> {
-        let _ = client
+        let _put_result = client
             .put_json(
                 &format!("/v1/config/strongbox/tls/ca/{}/role/{}", ca_name, role.name),
                 &serde_json::to_value(role)?,

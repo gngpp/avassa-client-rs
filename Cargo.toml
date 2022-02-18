@@ -7,6 +7,8 @@ edition = "2021"
 documentation = "https://docs.rs/avassa-client"
 description = "Library for integrating with the Avassa APIs"
 repository="https://gitlab.com/avassa-public/avassa-client-rs"
+categories = ["api-bindings"]
+keywords = ["avassa"]
 
 [features]
 utilities = []

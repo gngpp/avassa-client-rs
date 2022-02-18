@@ -38,7 +38,7 @@ impl Vault {
         let vault_url = format!("{}/{}", SBOX_VAULTS, vault);
         tracing::debug!("Opening vault at path: {}", vault_url);
         // Try to get the sbox vault
-        let _: serde_json::Value = client.get_json(&vault_url, None).await?;
+        let _vault: serde_json::Value = client.get_json(&vault_url, None).await?;
         Ok(Self {
             client: client.clone(),
             vault_url,
@@ -56,8 +56,8 @@ impl Vault {
             .ok_or_else(|| Error::general("expected a JSON object in secrets"))?;
 
         let mut cache = HashMap::new();
-        if let Some(data) = kv.get("dict").map(|d| d.as_object()).flatten() {
-            for (k, v) in data.into_iter() {
+        if let Some(data) = kv.get("dict").and_then(serde_json::Value::as_object) {
+            for (k, v) in data {
                 cache.insert(
                     k.clone(),
                     v.as_str()
@@ -81,6 +81,7 @@ pub struct Secrets {
 
 impl Secrets {
     /// Try to get a value
+    #[must_use]
     pub fn get(&self, key: &str) -> Option<&String> {
         self.cache.get(key)
     }

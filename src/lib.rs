@@ -69,8 +69,11 @@
 //! }
 //! ```
 
-#![deny(missing_docs)]
-
+#![deny(clippy::all)]
+#![warn(clippy::pedantic)]
+#![warn(clippy::nursery)]
+#![warn(clippy::cargo)]
+#![allow(clippy::missing_errors_doc)]
 use serde::Deserialize;
 use serde_json::json;
 
