@@ -5,13 +5,9 @@ use crate::{Error, Result};
 use futures_util::StreamExt;
 use serde::{Deserialize, Serialize};
 
-mod consumer;
-mod log_query;
-mod producer;
-
-pub use consumer::*;
-pub use log_query::*;
-pub use producer::*;
+pub mod consumer;
+pub mod log_query;
+pub mod producer;
 
 type WebSocketStream =
     tokio_tungstenite::WebSocketStream<tokio_native_tls::TlsStream<tokio::net::TcpStream>>;

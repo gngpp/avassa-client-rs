@@ -511,8 +511,8 @@ impl Client {
         producer_name: &str,
         topic: &str,
         options: volga::Options,
-    ) -> Result<volga::Producer> {
-        crate::volga::ProducerBuilder::new(self, producer_name, topic, options)?
+    ) -> Result<volga::producer::Producer> {
+        crate::volga::producer::ProducerBuilder::new(self, producer_name, topic, options)?
             .set_options(options)
             .connect()
             .await
@@ -525,8 +525,8 @@ impl Client {
         topic: &str,
         site: &str,
         options: volga::Options,
-    ) -> Result<volga::Producer> {
-        crate::volga::ProducerBuilder::new_nat(self, producer_name, topic, site, options)?
+    ) -> Result<volga::producer::Producer> {
+        crate::volga::producer::ProducerBuilder::new_nat(self, producer_name, topic, site, options)?
             .set_options(options)
             .connect()
             .await
@@ -537,9 +537,9 @@ impl Client {
         &self,
         consumer_name: &str,
         topic: &str,
-        options: crate::volga::ConsumerOptions,
-    ) -> Result<volga::Consumer> {
-        crate::volga::ConsumerBuilder::new(self, consumer_name, topic)?
+        options: crate::volga::consumer::ConsumerOptions,
+    ) -> Result<volga::consumer::Consumer> {
+        crate::volga::consumer::ConsumerBuilder::new(self, consumer_name, topic)?
             .set_options(options)
             .connect()
             .await
@@ -551,9 +551,9 @@ impl Client {
         consumer_name: &str,
         topic: &str,
         site: &str,
-        options: crate::volga::ConsumerOptions,
-    ) -> Result<volga::Consumer> {
-        crate::volga::ConsumerBuilder::new_nat(self, consumer_name, topic, site)?
+        options: crate::volga::consumer::ConsumerOptions,
+    ) -> Result<volga::consumer::Consumer> {
+        crate::volga::consumer::ConsumerBuilder::new_nat(self, consumer_name, topic, site)?
             .set_options(options)
             .connect()
             .await
