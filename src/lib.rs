@@ -477,6 +477,7 @@ impl Client {
             .send()
             .await?;
 
+        #[allow(clippy::redundant_closure_for_method_calls)]
         if result.status().is_success() {
             use std::error::Error;
             let resp = result.json().await.or_else(|e| match e {

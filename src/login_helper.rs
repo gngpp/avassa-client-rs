@@ -2,10 +2,11 @@
 //! Optional module for logging in
 
 /// Login from environment variables
-/// `SUPD` - typically set to https://api:4646
-/// `APPROLE_SECRET_ID` - set by the application specification
+/// * `SUPD` - typically set to `https://api:4646`
+/// * `APPROLE_SECRET_ID` - set by the application specification
 ///
 /// If no `APPROLE_SECRET_ID` is set, fallback to testing with `SUPD_USER` and `SUPD_PASSWORD`.
+///
 /// **NOTE** This should not be used in production but only for local testing.
 ///
 pub async fn login() -> crate::Result<crate::Client> {
