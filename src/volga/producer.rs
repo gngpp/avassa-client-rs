@@ -6,7 +6,7 @@ use serde_json::json;
 use tokio_tungstenite::{client_async, tungstenite::Message as WSMessage};
 
 /// [`Producer`] builder
-pub struct ProducerBuilder<'a> {
+pub struct Builder<'a> {
     avassa_client: &'a crate::Client,
     location: &'a str,
     nat_site: Option<&'a str>,
@@ -16,7 +16,7 @@ pub struct ProducerBuilder<'a> {
     options: Options,
 }
 
-impl<'a> ProducerBuilder<'a> {
+impl<'a> Builder<'a> {
     /// Create new Producer builder
     pub fn new(
         avassa_client: &'a crate::Client,
@@ -58,6 +58,7 @@ impl<'a> ProducerBuilder<'a> {
     }
 
     /// Set Volga [`Options`]
+    #[must_use]
     pub fn set_options(self, options: Options) -> Self {
         Self { options, ..self }
     }
@@ -77,23 +78,24 @@ impl<'a> ProducerBuilder<'a> {
         let tls = self.avassa_client.open_tls_stream().await?;
         let (mut ws, _) = client_async(request, tls).await?;
 
-        let cmd =
-            if self.location == "nat-site" {
-                json!({
-                    "op": "open-producer",
-                    "location": self.location,
-                    "nat-site": self.nat_site.unwrap(),
-                    "topic": self.topic,
-                    "name": self.name,
-                    "opts": self.options,
-                })} else {
-                json!({
-                    "op": "open-producer",
-                    "location": self.location,
-                    "topic": self.topic,
-                    "name": self.name,
-                    "opts": self.options,                
-                })};
+        let cmd = if self.location == "nat-site" {
+            json!({
+                "op": "open-producer",
+                "location": self.location,
+                "nat-site": self.nat_site.unwrap(),
+                "topic": self.topic,
+                "name": self.name,
+                "opts": self.options,
+            })
+        } else {
+            json!({
+                "op": "open-producer",
+                "location": self.location,
+                "topic": self.topic,
+                "name": self.name,
+                "opts": self.options,
+            })
+        };
 
         tracing::debug!("{:?}", serde_json::to_string_pretty(&cmd));
 

@@ -55,7 +55,7 @@ struct Consumer {
     more_n: usize,
     last_ack: usize,
     buffered: usize,
-    mode: crate::volga::Mode,
+    mode: crate::volga::consumer::Mode,
     consuming_host: String,
 }
 

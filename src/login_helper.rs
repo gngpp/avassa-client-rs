@@ -26,17 +26,16 @@ pub async fn login() -> crate::Result<crate::Client> {
     };
 
     tracing::info!("Trying application login");
-    let avassa = match builder.application_login(&supd, None).await {
-        Ok(client) => Ok(client),
-        Err(_) => {
-            tracing::info!("Trying username/password login");
-            let username = std::env::var("SUPD_USER")
-                .map_err(|_| crate::Error::LoginFailureMissingEnv("SUPD_USER".to_string()))?;
-            let password = std::env::var("SUPD_PASSWORD")
-                .map_err(|_| crate::Error::LoginFailureMissingEnv("SUPD_PASSWORD".to_string()))?;
-            builder.login(&supd, &username, &password).await
-        }
-    }?;
-    tracing::info!("Successfully logged in");
-    Ok(avassa)
+    if let Ok(client) = builder.application_login(&supd, None).await {
+        return Ok(client);
+    }
+
+    tracing::info!("Trying username/password login");
+    let username = std::env::var("SUPD_USER")
+        .map_err(|_| crate::Error::LoginFailureMissingEnv("SUPD_USER".to_string()))?;
+    let password = std::env::var("SUPD_PASSWORD")
+        .map_err(|_| crate::Error::LoginFailureMissingEnv("SUPD_PASSWORD".to_string()))?;
+    builder.login(&supd, &username, &password).await
+    // tracing::info!("Successfully logged in");
+    // Ok(avassa)
 }

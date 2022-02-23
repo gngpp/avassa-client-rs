@@ -34,6 +34,7 @@ impl serde::ser::Serialize for Since {
 macro_rules! query_setter {
     ($name: ident, $type:ty, $doc:literal) => {
         #[doc=$doc]
+        #[must_use]
         pub fn $name(self, $name: &$type) -> Query {
             Self {
                 $name: Some($name.into()),
@@ -84,6 +85,7 @@ pub struct Query {
 
 impl Query {
     /// Create a query instance
+    #[must_use]
     pub fn new() -> Self {
         Self {
             op: "query_logs".into(),
@@ -102,6 +104,7 @@ impl Query {
     }
 
     /// The name of the docker image
+    #[must_use]
     pub fn image_name(self, image_name: &str) -> Self {
         Self {
             application: Some(image_name.into()),
@@ -112,6 +115,7 @@ impl Query {
     /// When we have multiple replicas, by deafult all replicated
     /// logs are read and merged, if we wish to read only one
     /// replica log, we can indicate which replica index to follow
+    #[must_use]
     pub fn replica_index(self, ix: u32) -> Self {
         Self {
             ix: Some(ix),
@@ -122,6 +126,7 @@ impl Query {
     query_setter!(application, str, "Filter on application name");
 
     ///Get logs since
+    #[must_use]
     pub fn since(self, since: &Since) -> Self {
         Self {
             since: Some(since.clone()),
@@ -145,6 +150,7 @@ impl Query {
 
     /// This is a shorthand to search for the first error in all
     /// logs. Can be combined with [`Self::since`] and [`Self::re_hits`]
+    #[must_use]
     pub fn search_error(self) -> Self {
         Self {
             search_error: Some(true),
@@ -154,6 +160,7 @@ impl Query {
 
     /// With either of the regular expression searches, continue
     /// to drop data until `re_hits` log entries have matched
+    #[must_use]
     pub fn re_hits(self, re_hits: u64) -> Self {
         Self {
             re_hits: Some(re_hits),

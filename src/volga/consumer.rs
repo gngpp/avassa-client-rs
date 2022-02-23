@@ -1,4 +1,4 @@
-use super::{Options, WebSocketStream};
+use super::WebSocketStream;
 use crate::Result;
 use chrono::{DateTime, Utc};
 use futures_util::SinkExt;
@@ -24,12 +24,12 @@ pub enum Mode {
 
 /// [`Consumer`] options
 #[derive(Clone, Copy, Debug)]
-pub struct ConsumerOptions {
+pub struct Options {
     /// Volga general options
-    pub volga_options: Options,
+    pub volga_options: crate::volga::Options,
 
     /// Starting position
-    pub position: ConsumerPosition,
+    pub position: Position,
 
     /// If set, the client will automatically request more items
     pub auto_more: bool,
@@ -38,9 +38,8 @@ pub struct ConsumerOptions {
     pub mode: Mode,
 }
 
-/// Volga Open Consumer message
 #[derive(Clone, Copy, Debug, Serialize)]
-pub struct OpenConsumer<'a> {
+struct OpenConsumer<'a> {
     op: &'a str,
     location: &'a str,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -55,18 +54,18 @@ pub struct OpenConsumer<'a> {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "position-timestamp")]
     position_timestamp: Option<chrono::DateTime<chrono::Local>>,
-    opts: Options,
+    opts: crate::volga::Options,
 }
 
-impl Default for ConsumerOptions {
+impl Default for Options {
     fn default() -> Self {
         Self {
             volga_options: super::Options {
                 // As consumer, try with create false.
                 create: false,
-                ..Default::default()
+                ..crate::volga::Options::default()
             },
-            position: Default::default(),
+            position: Position::default(),
             auto_more: true,
             mode: Mode::Exclusive,
         }
@@ -75,7 +74,7 @@ impl Default for ConsumerOptions {
 
 /// Volga Consumer starting position
 #[derive(Clone, Copy, Debug, Serialize)]
-pub enum ConsumerPosition {
+pub enum Position {
     /// Get all messages from the beginning
     #[serde(rename = "beginning")]
     Beginning,
@@ -94,25 +93,25 @@ pub enum ConsumerPosition {
     TimeStamp(chrono::DateTime<chrono::Local>),
 }
 
-impl Default for ConsumerPosition {
+impl Default for Position {
     fn default() -> Self {
         Self::End
     }
 }
 
 /// [`Consumer`] builder
-pub struct ConsumerBuilder<'a> {
+pub struct Builder<'a> {
     avassa_client: &'a crate::Client,
     location: &'a str,
     nat_site: Option<&'a str>,
     topic: &'a str,
     ws_url: url::Url,
     name: &'a str,
-    options: ConsumerOptions,
+    options: Options,
 }
 
 /// Created from the Avassa Client.
-impl<'a> ConsumerBuilder<'a> {
+impl<'a> Builder<'a> {
     /// Create a Volga Consumer Builder
     pub(crate) fn new(
         avassa_client: &'a crate::Client,
@@ -128,7 +127,7 @@ impl<'a> ConsumerBuilder<'a> {
             topic,
             ws_url,
             name,
-            options: Default::default(),
+            options: crate::volga::consumer::Options::default(),
         })
     }
 
@@ -148,12 +147,13 @@ impl<'a> ConsumerBuilder<'a> {
             topic,
             ws_url,
             name,
-            options: Default::default(),
+            options: crate::volga::consumer::Options::default(),
         })
     }
 
-    /// Set Volga `ConsumerOptions`
-    pub fn set_options(self, options: ConsumerOptions) -> Self {
+    /// Set Volga `Options`
+    #[must_use]
+    pub fn set_options(self, options: Options) -> Self {
         Self { options, ..self }
     }
 
@@ -176,18 +176,18 @@ impl<'a> ConsumerBuilder<'a> {
             topic: self.topic,
             name: self.name,
             position: match self.options.position {
-                super::ConsumerPosition::SequenceNumber(_seqno) => "seqno",
-                super::ConsumerPosition::TimeStamp(_ts) => "timestamp",
-                super::ConsumerPosition::Beginning => "beginning",
-                super::ConsumerPosition::End => "end",
-                super::ConsumerPosition::Unread => "unread",
+                Position::SequenceNumber(_seqno) => "seqno",
+                Position::TimeStamp(_ts) => "timestamp",
+                Position::Beginning => "beginning",
+                Position::End => "end",
+                Position::Unread => "unread",
             },
             position_sequence_number: match self.options.position {
-                super::ConsumerPosition::SequenceNumber(seqno) => Some(seqno),
+                Position::SequenceNumber(seqno) => Some(seqno),
                 _ => None,
             },
             position_timestamp: match self.options.position {
-                super::ConsumerPosition::TimeStamp(ts) => Some(ts),
+                Position::TimeStamp(ts) => Some(ts),
                 _ => None,
             },
             opts: self.options.volga_options,
@@ -215,7 +215,7 @@ impl<'a> ConsumerBuilder<'a> {
     }
 }
 
-/// Metadata on the Volga message received in 'Consumer::consume'
+/// Metadata on the Volga message received in `Consumer::consume`
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MessageMetadata {
     /// Consumer name
@@ -241,12 +241,12 @@ pub struct MessageMetadata {
 /// Volga Consumer
 pub struct Consumer {
     ws: WebSocketStream,
-    options: ConsumerOptions,
+    options: Options,
     last_seq_no: u64,
 }
 
 impl Consumer {
-    /// Indicate the client is ready for n more messages. If auto_more is set in the
+    /// Indicate the client is ready for n more messages. If `auto_more` is set in the
     /// options, this is automatically handled.
     pub async fn more(&mut self, n: usize) -> Result<()> {
         let cmd = json!( {
@@ -292,7 +292,8 @@ impl Consumer {
     }
 
     /// returns the last received sequence number
-    pub fn last_seq_no(&self) -> u64 {
+    #[must_use]
+    pub const fn last_seq_no(&self) -> u64 {
         self.last_seq_no
     }
 }

@@ -24,8 +24,7 @@ pub mod state {
             .as_object()
             .ok_or_else(|| crate::Error::general("Failed to get cluster information"))?
             .get("cluster-id")
-            .map(serde_json::Value::as_str)
-            .flatten()
+            .and_then(serde_json::Value::as_str)
             .ok_or_else(|| crate::Error::general("Failed to get cluster_id"))
             .map(Into::into)
     }

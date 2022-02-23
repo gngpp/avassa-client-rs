@@ -71,7 +71,6 @@
 
 #![deny(clippy::all)]
 #![warn(clippy::pedantic)]
-#![warn(clippy::nursery)]
 #![warn(clippy::cargo)]
 #![allow(clippy::missing_errors_doc)]
 use serde::Deserialize;
@@ -163,6 +162,7 @@ pub enum Error {
 
 impl Error {
     /// Create a general error
+    #[must_use]
     pub fn general(err: &str) -> Self {
         Self::General(err.to_string())
     }
@@ -203,7 +203,8 @@ pub struct ClientBuilder {
 
 impl ClientBuilder {
     /// Create a new builder instance
-    pub fn new() -> Self {
+    #[must_use]
+    pub const fn new() -> Self {
         Self {
             reqwest_ca: Vec::new(),
             tls_ca: Vec::new(),
@@ -222,6 +223,7 @@ impl ClientBuilder {
     }
 
     /// Disable certificate verification
+    #[must_use]
     pub fn danger_accept_invalid_certs(self) -> Self {
         Self {
             disable_cert_verification: true,
@@ -230,6 +232,7 @@ impl ClientBuilder {
     }
 
     /// Disable hostname verification
+    #[must_use]
     pub fn danger_accept_invalid_hostnames(self) -> Self {
         Self {
             disable_hostname_check: true,
@@ -257,7 +260,7 @@ impl ClientBuilder {
     }
 
     /// Login to an avassa Control Tower or Edge Enforcer instance. If possible,
-    /// please use the application_login as no credentials needs to be distributed.
+    /// please use the `application_login` as no credentials needs to be distributed.
     pub async fn login(&self, host: &str, username: &str, password: &str) -> Result<Client> {
         let base_url = url::Url::parse(host)?;
         let url = base_url.join("v1/login")?;
@@ -305,7 +308,8 @@ impl std::fmt::Debug for Client {
 
 impl Client {
     /// Create a Client builder
-    pub fn builder() -> ClientBuilder {
+    #[must_use]
+    pub const fn builder() -> ClientBuilder {
         ClientBuilder::new()
     }
 
@@ -405,6 +409,8 @@ impl Client {
     }
 
     /// POST arbitrary JSON to a path
+    /// # Panics
+    /// never
     pub async fn post_json(
         &self,
         path: &str,
@@ -434,7 +440,7 @@ impl Client {
             }
 
             match responses.len() {
-                0 => Ok(serde_json::Value::Object(Default::default())),
+                0 => Ok(serde_json::Value::Object(serde_json::Map::default())),
                 1 => Ok(responses.into_iter().next().unwrap()),
                 _ => {
                     // Convert to a JSON array
@@ -477,8 +483,7 @@ impl Client {
                 e if e.is_decode() => {
                     match e
                         .source()
-                        .map(|e| e.downcast_ref::<serde_json::Error>())
-                        .flatten()
+                        .and_then(|e| e.downcast_ref::<serde_json::Error>())
                     {
                         Some(e) if e.is_eof() => {
                             Ok(serde_json::Value::Object(serde_json::Map::new()))
@@ -500,11 +505,6 @@ impl Client {
         }
     }
 
-    /// Remove me
-    pub fn get_client(&self) -> reqwest::Client {
-        self.client.clone()
-    }
-
     /// Open a volga producer on a topic
     pub async fn volga_open_producer(
         &self,
@@ -512,7 +512,7 @@ impl Client {
         topic: &str,
         options: volga::Options,
     ) -> Result<volga::producer::Producer> {
-        crate::volga::producer::ProducerBuilder::new(self, producer_name, topic, options)?
+        crate::volga::producer::Builder::new(self, producer_name, topic, options)?
             .set_options(options)
             .connect()
             .await
@@ -526,7 +526,7 @@ impl Client {
         site: &str,
         options: volga::Options,
     ) -> Result<volga::producer::Producer> {
-        crate::volga::producer::ProducerBuilder::new_nat(self, producer_name, topic, site, options)?
+        crate::volga::producer::Builder::new_nat(self, producer_name, topic, site, options)?
             .set_options(options)
             .connect()
             .await
@@ -537,9 +537,9 @@ impl Client {
         &self,
         consumer_name: &str,
         topic: &str,
-        options: crate::volga::consumer::ConsumerOptions,
+        options: crate::volga::consumer::Options,
     ) -> Result<volga::consumer::Consumer> {
-        crate::volga::consumer::ConsumerBuilder::new(self, consumer_name, topic)?
+        crate::volga::consumer::Builder::new(self, consumer_name, topic)?
             .set_options(options)
             .connect()
             .await
@@ -551,9 +551,9 @@ impl Client {
         consumer_name: &str,
         topic: &str,
         site: &str,
-        options: crate::volga::consumer::ConsumerOptions,
+        options: crate::volga::consumer::Options,
     ) -> Result<volga::consumer::Consumer> {
-        crate::volga::consumer::ConsumerBuilder::new_nat(self, consumer_name, topic, site)?
+        crate::volga::consumer::Builder::new_nat(self, consumer_name, topic, site)?
             .set_options(options)
             .connect()
             .await
@@ -579,8 +579,11 @@ impl Client {
     }
 
     /// Opens a query stream
-    pub async fn volga_open_log_query(&self, query: &volga::Query) -> Result<volga::QueryStream> {
-        volga::QueryStream::new(self, query).await
+    pub async fn volga_open_log_query(
+        &self,
+        query: &volga::log_query::Query,
+    ) -> Result<volga::log_query::QueryStream> {
+        volga::log_query::QueryStream::new(self, query).await
     }
 
     /// Try to open a Strongbox Vault
