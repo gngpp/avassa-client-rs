@@ -37,6 +37,4 @@ pub async fn login() -> crate::Result<crate::Client> {
     let password = std::env::var("SUPD_PASSWORD")
         .map_err(|_| crate::Error::LoginFailureMissingEnv("SUPD_PASSWORD".to_string()))?;
     builder.login(&supd, &username, &password).await
-    // tracing::info!("Successfully logged in");
-    // Ok(avassa)
 }
