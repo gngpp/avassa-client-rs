@@ -575,7 +575,9 @@ impl Client {
         let connector: tokio_native_tls::TlsConnector = connector.into();
         let addrs = self.websocket_url.socket_addrs(|| None)?;
         let stream = tokio::net::TcpStream::connect(&*addrs).await?;
-        let stream = connector.connect("192.168.8.11:4646", stream).await?;
+        let stream = connector
+            .connect(self.websocket_url.as_str(), stream)
+            .await?;
         Ok(stream)
     }
 

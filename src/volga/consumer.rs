@@ -291,6 +291,19 @@ impl Consumer {
         }
     }
 
+    pub async fn ack(&mut self, seqno: u64) -> Result<()> {
+        tracing::trace!("ack: {}", seqno);
+        let cmd = serde_json::json!({
+            "op": "ack",
+            "seqno": seqno,
+        });
+
+        self.ws
+            .send(WSMessage::Binary(serde_json::to_vec(&cmd)?))
+            .await?;
+        Ok(())
+    }
+
     /// returns the last received sequence number
     #[must_use]
     pub const fn last_seq_no(&self) -> u64 {

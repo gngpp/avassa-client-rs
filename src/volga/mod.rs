@@ -76,9 +76,12 @@ async fn get_binary_response(ws: &mut WebSocketStream) -> Result<Vec<u8>> {
         match resp {
             tokio_tungstenite::tungstenite::Message::Pong(_) => continue,
             tokio_tungstenite::tungstenite::Message::Binary(m) => return Ok(m),
+            tokio_tungstenite::tungstenite::Message::Close(_) => {
+                return Err(Error::Volga(Some("closed".to_string())));
+            }
             msg => {
                 return Err(Error::Volga(Some(format!(
-                    "Unexpected message type: {}",
+                    "Unexpected message type: '{}'",
                     msg
                 ))))
             }
