@@ -4,7 +4,7 @@ use chrono::{DateTime, Utc};
 use futures_util::SinkExt;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use tokio_tungstenite::{client_async, tungstenite::Message as WSMessage};
+use tokio_tungstenite::tungstenite::{client::IntoClientRequest, Message as WSMessage};
 
 const N_IN_AUTO_MORE: usize = 5;
 
@@ -159,16 +159,19 @@ impl<'a> Builder<'a> {
 
     /// Connect and create a `Consumer`
     pub async fn connect(self) -> Result<Consumer> {
-        let request = tokio_tungstenite::tungstenite::handshake::client::Request::builder()
-            .uri(self.ws_url.to_string())
-            .header(
-                "Authorization",
-                format!("Bearer {}", self.avassa_client.bearer_token().await),
-            )
-            .body(())
-            .map_err(tokio_tungstenite::tungstenite::error::Error::HttpFormat)?;
+        let mut request = self.ws_url.into_client_request()?;
+        request.headers_mut().insert(
+            reqwest::header::AUTHORIZATION,
+            reqwest::header::HeaderValue::from_str(&format!(
+                "Bearer {}",
+                self.avassa_client.bearer_token().await
+            ))
+            .map_err(|_e| {
+                crate::Error::General("Failed to set Authorization header".to_string())
+            })?,
+        );
         let tls = self.avassa_client.open_tls_stream().await?;
-        let (mut ws, _) = client_async(request, tls).await?;
+        let (mut ws, _) = tokio_tungstenite::client_async(request, tls).await?;
         let cmd = OpenConsumer {
             op: "open-consumer",
             location: self.location,

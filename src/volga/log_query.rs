@@ -5,7 +5,7 @@ use futures_util::{
 };
 use pin_project_lite::pin_project;
 use serde::Serialize;
-use tokio_tungstenite::{client_async, tungstenite::Message as WSMessage};
+use tokio_tungstenite::tungstenite::{client::IntoClientRequest, Message as WSMessage};
 
 /// Used to query logs 'since'.
 #[derive(Clone)]
@@ -185,16 +185,19 @@ impl Default for Query {
 impl QueryStream {
     pub(crate) async fn new(avassa_client: &crate::Client, query: &Query) -> Result<Self> {
         let ws_url = avassa_client.websocket_url.join("volga")?;
-        let request = tokio_tungstenite::tungstenite::handshake::client::Request::builder()
-            .uri(ws_url.to_string())
-            .header(
-                "Authorization",
-                format!("Bearer {}", avassa_client.bearer_token().await),
-            )
-            .body(())
-            .map_err(tokio_tungstenite::tungstenite::error::Error::HttpFormat)?;
+        let mut request = ws_url.into_client_request()?;
+        request.headers_mut().insert(
+            reqwest::header::AUTHORIZATION,
+            reqwest::header::HeaderValue::from_str(&format!(
+                "Bearer {}",
+                avassa_client.bearer_token().await
+            ))
+            .map_err(|_e| {
+                crate::Error::General("Failed to set Authorization header".to_string())
+            })?,
+        );
         let tls = avassa_client.open_tls_stream().await?;
-        let (mut ws, _) = client_async(request, tls).await?;
+        let (mut ws, _) = tokio_tungstenite::client_async(request, tls).await?;
 
         let json = serde_json::to_string_pretty(&query)?;
         tracing::debug!("{}", json);
