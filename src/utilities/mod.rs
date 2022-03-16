@@ -19,13 +19,13 @@ pub mod state {
     /// Return the site name
     pub async fn site_name(client: &Client) -> crate::Result<String> {
         client
-            .get_json::<serde_json::Value>("/v1/state/cluster", None)
+            .get_json::<serde_json::Value>("/v1/state/system/cluster", None)
             .await?
             .as_object()
             .ok_or_else(|| crate::Error::general("Failed to get cluster information"))?
-            .get("cluster-id")
+            .get("site-name")
             .and_then(serde_json::Value::as_str)
-            .ok_or_else(|| crate::Error::general("Failed to get cluster_id"))
+            .ok_or_else(|| crate::Error::general("Failed to get site name"))
             .map(Into::into)
     }
 

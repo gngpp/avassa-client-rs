@@ -1,6 +1,6 @@
 [package]
 name = "avassa-client"
-version = "0.1.6"
+version = "0.2.0"
 authors = ["Fredrik Jansson <fj@avassa.io>"]
 license = "Apache-2.0"
 edition = "2021"
@@ -15,6 +15,7 @@ utilities = []
 login-helper = []
 
 [dependencies]
+bytesize = { version = "1", features = ["serde"] }
 chrono = { version = "0.4", features = ["serde"] }
 futures-util = "0.3"
 pin-project-lite = "0.2"

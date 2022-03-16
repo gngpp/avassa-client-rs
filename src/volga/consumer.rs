@@ -26,7 +26,7 @@ pub enum Mode {
 #[derive(Clone, Copy, Debug)]
 pub struct Options {
     /// Volga general options
-    pub volga_options: crate::volga::Options,
+    // pub volga_options: crate::volga::Options,
 
     /// Starting position
     pub position: Position,
@@ -38,33 +38,33 @@ pub struct Options {
     pub mode: Mode,
 }
 
-#[derive(Clone, Copy, Debug, Serialize)]
+#[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "kebab-case")]
 struct OpenConsumer<'a> {
     op: &'a str,
     location: &'a str,
     #[serde(skip_serializing_if = "Option::is_none")]
-    #[serde(rename = "nat-site")]
     nat_site: Option<&'a str>,
     topic: &'a str,
     name: &'a str,
     position: &'a str,
     #[serde(skip_serializing_if = "Option::is_none")]
-    #[serde(rename = "position-sequence-number")]
     position_sequence_number: Option<u64>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    #[serde(rename = "position-timestamp")]
     position_timestamp: Option<chrono::DateTime<chrono::Local>>,
-    opts: crate::volga::Options,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    create_options: Option<crate::volga::Options>,
+    on_no_exists: String,
 }
 
 impl Default for Options {
     fn default() -> Self {
         Self {
-            volga_options: super::Options {
-                // As consumer, try with create false.
-                create: false,
-                ..crate::volga::Options::default()
-            },
+            // volga_options: super::Options {
+            //     // As consumer, try with create false.
+            //     create: false,
+            //     ..crate::volga::Options::default()
+            // },
             position: Position::default(),
             auto_more: true,
             mode: Mode::Exclusive,
@@ -193,15 +193,17 @@ impl<'a> Builder<'a> {
                 Position::TimeStamp(ts) => Some(ts),
                 _ => None,
             },
-            opts: self.options.volga_options,
+            on_no_exists: "wait".to_string(),
+            create_options: Some(self.options),
         };
 
         tracing::debug!("{:?}", serde_json::to_string_pretty(&cmd));
+        println!("{}", serde_json::to_string_pretty(&cmd)?);
 
         ws.send(WSMessage::Binary(serde_json::to_vec(&cmd)?))
             .await?;
 
-        super::get_ok_volga_response(&mut ws).await?;
+        dbg! {super::get_ok_volga_response(&mut ws).await}?;
 
         tracing::debug!("Successfully connected consumer to topic {}", self.topic);
         let mut consumer = Consumer {

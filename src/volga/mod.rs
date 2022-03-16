@@ -30,7 +30,7 @@ pub enum Format {
     #[serde(rename = "json")]
     JSON,
     /// String encoded
-    #[serde(rename = "bytes")]
+    #[serde(rename = "string")]
     String,
 }
 
