@@ -21,3 +21,4 @@ test:
     - *alpine_before
   script:
     - cargo test --verbose
+    - cargo test --verbose --all-features
