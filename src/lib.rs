@@ -53,7 +53,9 @@
 //!             )
 //!             .await?;
 //!
-//!         producer.produce("test message").await?;
+//!         producer.produce(&serde_json::json!({
+//!            "msg": "The Message",
+//!         })).await?;
 //!         Ok::<_, avassa_client::Error>(())
 //!     });
 //!

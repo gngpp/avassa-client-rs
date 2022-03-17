@@ -170,6 +170,9 @@ mod test {
         assert_eq!(&fail, r#"{"on-no-exists":"fail"}"#);
 
         let create = serde_json::to_string(&super::OnNoExists::Create(Default::default())).unwrap();
-        assert_eq!(&create, r#"{"on-no-exists":"create", "create-options":{}}"#);
+        assert_eq!(
+            &create,
+            r#"{"on-no-exists":"create","create-options":{"replication-factor":1,"persistence":"disk","num-chunks":100,"format":"json","ephemeral":false}}"#
+        );
     }
 }
