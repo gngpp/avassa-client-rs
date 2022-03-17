@@ -25,9 +25,6 @@ pub enum Mode {
 /// [`Consumer`] options
 #[derive(Clone, Copy, Debug)]
 pub struct Options {
-    /// Volga general options
-    // pub volga_options: crate::volga::Options,
-
     /// Starting position
     pub position: Position,
 
@@ -36,15 +33,18 @@ pub struct Options {
 
     /// Volga stream mode
     pub mode: Mode,
+
+    /// Optional create options
+    pub on_no_exists: super::OnNoExists,
 }
 
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "kebab-case")]
 struct OpenConsumer<'a> {
     op: &'a str,
-    location: &'a str,
+    location: super::Location,
     #[serde(skip_serializing_if = "Option::is_none")]
-    nat_site: Option<&'a str>,
+    child_site: Option<&'a str>,
     topic: &'a str,
     name: &'a str,
     position: &'a str,
@@ -52,19 +52,14 @@ struct OpenConsumer<'a> {
     position_sequence_number: Option<u64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     position_timestamp: Option<chrono::DateTime<chrono::Local>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    create_options: Option<crate::volga::Options>,
-    on_no_exists: String,
+    #[serde(flatten)]
+    on_no_exists: super::OnNoExists,
 }
 
 impl Default for Options {
     fn default() -> Self {
         Self {
-            // volga_options: super::Options {
-            //     // As consumer, try with create false.
-            //     create: false,
-            //     ..crate::volga::Options::default()
-            // },
+            on_no_exists: super::OnNoExists::Wait,
             position: Position::default(),
             auto_more: true,
             mode: Mode::Exclusive,
@@ -102,8 +97,8 @@ impl Default for Position {
 /// [`Consumer`] builder
 pub struct Builder<'a> {
     avassa_client: &'a crate::Client,
-    location: &'a str,
-    nat_site: Option<&'a str>,
+    location: super::Location,
+    child_site: Option<&'a str>,
     topic: &'a str,
     ws_url: url::Url,
     name: &'a str,
@@ -122,8 +117,8 @@ impl<'a> Builder<'a> {
 
         Ok(Self {
             avassa_client,
-            location: "local",
-            nat_site: None,
+            location: super::Location::Local,
+            child_site: None,
             topic,
             ws_url,
             name,
@@ -132,7 +127,7 @@ impl<'a> Builder<'a> {
     }
 
     /// Create a Volga NAT Consumer Builder
-    pub(crate) fn new_nat(
+    pub(crate) fn new_child(
         avassa_client: &'a crate::Client,
         name: &'a str,
         topic: &'a str,
@@ -142,8 +137,8 @@ impl<'a> Builder<'a> {
 
         Ok(Self {
             avassa_client,
-            location: "nat-site",
-            nat_site: Some(site),
+            location: super::Location::ChildSite,
+            child_site: Some(site),
             topic,
             ws_url,
             name,
@@ -175,7 +170,7 @@ impl<'a> Builder<'a> {
         let cmd = OpenConsumer {
             op: "open-consumer",
             location: self.location,
-            nat_site: self.nat_site,
+            child_site: self.child_site,
             topic: self.topic,
             name: self.name,
             position: match self.options.position {
@@ -193,17 +188,15 @@ impl<'a> Builder<'a> {
                 Position::TimeStamp(ts) => Some(ts),
                 _ => None,
             },
-            on_no_exists: "wait".to_string(),
-            create_options: Some(self.options),
+            on_no_exists: self.options.on_no_exists,
         };
 
-        tracing::debug!("{:?}", serde_json::to_string_pretty(&cmd));
-        println!("{}", serde_json::to_string_pretty(&cmd)?);
+        tracing::debug!("{:#?}", serde_json::to_string_pretty(&cmd));
 
         ws.send(WSMessage::Binary(serde_json::to_vec(&cmd)?))
             .await?;
 
-        dbg! {super::get_ok_volga_response(&mut ws).await}?;
+        super::get_ok_volga_response(&mut ws).await?;
 
         tracing::debug!("Successfully connected consumer to topic {}", self.topic);
         let mut consumer = Consumer {
@@ -222,12 +215,10 @@ impl<'a> Builder<'a> {
 
 /// Metadata on the Volga message received in `Consumer::consume`
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
 pub struct MessageMetadata {
-    /// Consumer name
-    pub name: String,
-
     /// Timestamp
-    pub time: DateTime<Utc>,
+    pub time: Option<DateTime<Utc>>,
 
     /// Milliseconds since epoch
     pub mtime: u64,
@@ -241,6 +232,9 @@ pub struct MessageMetadata {
 
     /// The message payload
     pub payload: serde_json::Value,
+
+    /// Name of the producer
+    pub producer_name: Option<String>,
 }
 
 /// Volga Consumer
@@ -253,6 +247,7 @@ pub struct Consumer {
 impl Consumer {
     /// Indicate the client is ready for n more messages. If `auto_more` is set in the
     /// options, this is automatically handled.
+    #[tracing::instrument(skip(self), level = "debug")]
     pub async fn more(&mut self, n: usize) -> Result<()> {
         let cmd = json!( {
             "op": "more",
@@ -268,7 +263,24 @@ impl Consumer {
     }
 
     /// Wait for the next message from Volga
+    #[tracing::instrument(skip(self), level = "trace")]
     pub async fn consume(&mut self) -> Result<MessageMetadata> {
+        let msg = super::get_binary_response(&mut self.ws).await?;
+        tracing::trace!("message: {}", String::from_utf8_lossy(&msg));
+
+        let resp: MessageMetadata = serde_json::from_slice(&msg)?;
+        self.last_seq_no = resp.seqno;
+        tracing::trace!("Metadata: {:?}", resp);
+
+        if resp.remain == 0 && self.options.auto_more {
+            self.more(N_IN_AUTO_MORE).await?;
+        }
+        Ok(resp)
+    }
+
+    /// Wait for the next message from Volga
+    #[tracing::instrument(skip(self))]
+    async fn consume_with_ping(&mut self) -> Result<MessageMetadata> {
         let timeout = std::time::Duration::from_secs(20);
 
         loop {
@@ -281,7 +293,7 @@ impl Consumer {
                 }
                 Ok(msg) => {
                     let msg = msg?;
-                    // tracing::error!("{}", String::from_utf8_lossy(&msg));
+                    tracing::trace!("message: {}", String::from_utf8_lossy(&msg));
 
                     let resp: MessageMetadata = serde_json::from_slice(&msg)?;
                     self.last_seq_no = resp.seqno;

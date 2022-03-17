@@ -1,19 +1,28 @@
-use super::{Options, WebSocketStream};
+use super::WebSocketStream;
 use crate::Result;
 use futures_util::SinkExt;
 use serde::Serialize;
 use serde_json::json;
 use tokio_tungstenite::tungstenite::{client::IntoClientRequest, Message as WSMessage};
 
+#[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "kebab-case")]
+struct OpenProducer<'a> {
+    op: &'a str,
+    location: super::Location,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    child_site: Option<&'a str>,
+    topic: &'a str,
+    name: &'a str,
+    #[serde(flatten)]
+    on_no_exists: super::OnNoExists,
+}
+
 /// [`Producer`] builder
 pub struct Builder<'a> {
     avassa_client: &'a crate::Client,
-    location: &'a str,
-    nat_site: Option<&'a str>,
-    topic: &'a str,
+    open_producer: OpenProducer<'a>,
     ws_url: url::Url,
-    name: &'a str,
-    options: Options,
 }
 
 impl<'a> Builder<'a> {
@@ -22,45 +31,45 @@ impl<'a> Builder<'a> {
         avassa_client: &'a crate::Client,
         name: &'a str,
         topic: &'a str,
-        options: Options,
+        on_no_exists: super::OnNoExists,
     ) -> Result<Self> {
         let ws_url = avassa_client.websocket_url.join("volga")?;
 
         Ok(Self {
             avassa_client,
-            location: "local",
-            nat_site: None,
-            topic,
             ws_url,
-            name,
-            options,
+            open_producer: OpenProducer {
+                op: "open-producer",
+                location: super::Location::Local,
+                child_site: None,
+                topic,
+                name,
+                on_no_exists,
+            },
         })
     }
 
-    pub(crate) fn new_nat(
+    pub(crate) fn new_child(
         avassa_client: &'a crate::Client,
         name: &'a str,
         topic: &'a str,
         udc: &'a str,
-        options: Options,
+        on_no_exists: super::OnNoExists,
     ) -> Result<Self> {
         let ws_url = avassa_client.websocket_url.join("volga")?;
 
         Ok(Self {
             avassa_client,
-            location: "nat-site",
-            nat_site: Some(udc),
-            topic,
             ws_url,
-            name,
-            options,
+            open_producer: OpenProducer {
+                op: "open-producer",
+                location: super::Location::ChildSite,
+                child_site: Some(udc),
+                topic,
+                name,
+                on_no_exists,
+            },
         })
-    }
-
-    /// Set Volga [`Options`]
-    #[must_use]
-    pub fn set_options(self, options: Options) -> Self {
-        Self { options, ..self }
     }
 
     /// Connect and create a [`Producer`]
@@ -81,33 +90,17 @@ impl<'a> Builder<'a> {
         let tls = self.avassa_client.open_tls_stream().await?;
         let (mut ws, _) = tokio_tungstenite::client_async(request, tls).await?;
 
-        let cmd = if self.location == "nat-site" {
-            json!({
-                "op": "open-producer",
-                "location": self.location,
-                "nat-site": self.nat_site.unwrap(),
-                "topic": self.topic,
-                "name": self.name,
-                "opts": self.options,
-            })
-        } else {
-            json!({
-                "op": "open-producer",
-                "location": self.location,
-                "topic": self.topic,
-                "name": self.name,
-                "opts": self.options,
-            })
-        };
+        tracing::debug!("{}", serde_json::to_string(&self.open_producer)?);
 
-        tracing::debug!("{:?}", serde_json::to_string_pretty(&cmd));
-
-        ws.send(WSMessage::Binary(serde_json::to_vec(&cmd)?))
+        ws.send(WSMessage::Binary(serde_json::to_vec(&self.open_producer)?))
             .await?;
 
         tracing::debug!("Waiting for ok");
         super::get_ok_volga_response(&mut ws).await?;
-        tracing::debug!("Successfully connected producer to topic {}", self.topic);
+        tracing::debug!(
+            "Successfully connected producer to topic {}",
+            self.open_producer.topic
+        );
         Ok(Producer { ws })
     }
 }
@@ -119,10 +112,12 @@ pub struct Producer {
 impl Producer {
     /// Produce message
     #[tracing::instrument(level = "trace", skip(self))]
-    pub async fn produce(&mut self, content: &str) -> Result<()> {
+    pub async fn produce<T: serde::Serialize + std::fmt::Debug>(
+        &mut self,
+        content: &T,
+    ) -> Result<()> {
         let cmd = json!({
             "op": "produce",
-            "mode": "sync",
             "payload": content,
         });
 
@@ -131,6 +126,10 @@ impl Producer {
         self.ws
             .send(WSMessage::Binary(serde_json::to_vec(&cmd)?))
             .await?;
+
+        tracing::debug!("Waiting for ok");
+        // TODO: only if sync
+        super::get_ok_volga_response(&mut self.ws).await?;
 
         Ok(())
     }

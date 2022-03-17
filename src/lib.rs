@@ -49,7 +49,8 @@
 //!         let mut producer = producer_client.volga_open_producer(
 //!             "test-producer",
 //!             "my-topic",
-//!             Default::default())
+//!             avassa_client::volga::OnNoExists::Create(Default::default())
+//!             )
 //!             .await?;
 //!
 //!         producer.produce("test message").await?;
@@ -511,24 +512,22 @@ impl Client {
         &self,
         producer_name: &str,
         topic: &str,
-        options: volga::Options,
+        on_no_exists: volga::OnNoExists,
     ) -> Result<volga::producer::Producer> {
-        crate::volga::producer::Builder::new(self, producer_name, topic, options)?
-            .set_options(options)
+        crate::volga::producer::Builder::new(self, producer_name, topic, on_no_exists)?
             .connect()
             .await
     }
 
     /// Open a volga NAT producer on a topic in a site
-    pub async fn volga_open_nat_producer(
+    pub async fn volga_open_child_site_producer(
         &self,
         producer_name: &str,
         topic: &str,
         site: &str,
-        options: volga::Options,
+        on_no_exists: volga::OnNoExists,
     ) -> Result<volga::producer::Producer> {
-        crate::volga::producer::Builder::new_nat(self, producer_name, topic, site, options)?
-            .set_options(options)
+        crate::volga::producer::Builder::new_child(self, producer_name, topic, site, on_no_exists)?
             .connect()
             .await
     }
@@ -546,15 +545,15 @@ impl Client {
             .await
     }
 
-    /// Creates and opens a Volga NAT consumer
-    pub async fn volga_open_nat_consumer(
+    /// Creates and opens a Volga consumer on a child site
+    pub async fn volga_open_child_site_consumer(
         &self,
         consumer_name: &str,
         topic: &str,
         site: &str,
         options: crate::volga::consumer::Options,
     ) -> Result<volga::consumer::Consumer> {
-        crate::volga::consumer::Builder::new_nat(self, consumer_name, topic, site)?
+        crate::volga::consumer::Builder::new_child(self, consumer_name, topic, site)?
             .set_options(options)
             .connect()
             .await
