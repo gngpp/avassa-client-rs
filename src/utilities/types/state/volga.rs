@@ -30,7 +30,9 @@ pub struct Topic {
     /// Worker hosts
     pub worker_hosts: Vec<String>,
     /// Replicatation factor
-    pub replication_factor: usize,
+    pub requested_replication_factor: usize,
+    /// Replicatation factor
+    pub current_replication_factor: usize,
     /// Persistence
     pub persistence: crate::volga::Persistence,
     /// Topic size

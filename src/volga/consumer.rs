@@ -218,7 +218,7 @@ impl<'a> Builder<'a> {
 #[serde(rename_all = "kebab-case")]
 pub struct MessageMetadata {
     /// Timestamp
-    pub time: Option<DateTime<Utc>>,
+    pub time: DateTime<Utc>,
 
     /// Milliseconds since epoch
     pub mtime: u64,
