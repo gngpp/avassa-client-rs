@@ -6,19 +6,19 @@
 //! ```no_run
 //! #[tokio::main]
 //! async fn main() -> Result<(), avassa_client::Error> {
-//!     use avassa_client::ClientBuilder;
+//!     use avassa_client::Client;
 //!
 //!     // API CA certificate loaded
 //!     let ca_cert = Vec::new();
 //!
 //!     // Use login using platform provided application token
 //!     let approle_id = "secret approle id";
-//!     let client = ClientBuilder::new()
+//!     let client = Client::builder()
 //!         .add_root_certificate(&ca_cert)?
 //!         .application_login("https://api.customer.net", Some(approle_id)).await?;
 //!
 //!     // Username and password authentication, good during the development phase
-//!     let client = ClientBuilder::new()
+//!     let client = Client::builder()
 //!         .add_root_certificate(&ca_cert)?
 //!         .login("https://1.2.3.4", "joe", "secret").await?;
 //!
@@ -31,14 +31,14 @@
 //! ```no_run
 //! #[tokio::main]
 //! async fn main() -> Result<(), avassa_client::Error> {
-//!     use avassa_client::ClientBuilder;
+//!     use avassa_client::Client;
 //!
 //!     // API CA certificate loaded
 //!     let ca_cert = Vec::new();
 //!
 //!     // Use login using platform provided application token
 //!     let approle_id = "secret approle id";
-//!     let client = ClientBuilder::new()
+//!     let client = Client::builder()
 //!         .add_root_certificate(&ca_cert)?
 //!         .application_login("https://api.customer.net", Some(approle_id)).await?;
 //!
@@ -207,7 +207,7 @@ pub struct ClientBuilder {
 impl ClientBuilder {
     /// Create a new builder instance
     #[must_use]
-    pub const fn new() -> Self {
+    const fn new() -> Self {
         Self {
             reqwest_ca: Vec::new(),
             tls_ca: Vec::new(),
@@ -275,6 +275,12 @@ impl ClientBuilder {
         });
         Client::do_login(self, base_url, url, data).await
     }
+
+    /// Login using an existing bearer token
+    pub fn token_login(&self, host: &str, token: &str) -> Result<Client> {
+        let base_url = url::Url::parse(host)?;
+        Client::new_from_token(self, base_url, token)
+    }
 }
 
 impl Default for ClientBuilder {
@@ -323,17 +329,7 @@ impl Client {
         payload: serde_json::Value,
     ) -> Result<Self> {
         let json = serde_json::to_string(&payload)?;
-        let client = reqwest::Client::builder();
-
-        // Add CA certificates
-        let client = builder
-            .reqwest_ca
-            .iter()
-            .fold(client, |client, ca| client.add_root_certificate(ca.clone()));
-
-        let client = client.danger_accept_invalid_certs(builder.disable_cert_verification);
-
-        let client = client.build()?;
+        let client = Self::reqwest_client(builder)?;
         let result = client
             .post(url)
             .header("content-type", "application/json")
@@ -350,6 +346,35 @@ impl Client {
             tracing::debug!("login returned {}", text);
             Err(Error::LoginFailure(text))
         }
+    }
+
+    fn reqwest_client(builder: &ClientBuilder) -> Result<reqwest::Client> {
+        let reqwest_client_builder = reqwest::Client::builder();
+
+        // Add CA certificates
+        let reqwest_client_builder = builder
+            .reqwest_ca
+            .iter()
+            .fold(reqwest_client_builder, |reqwest_client_builder, ca| {
+                reqwest_client_builder.add_root_certificate(ca.clone())
+            });
+
+        let reqwest_client_builder =
+            reqwest_client_builder.danger_accept_invalid_certs(builder.disable_cert_verification);
+
+        let client = reqwest_client_builder.build()?;
+        Ok(client)
+    }
+
+    fn new_from_token(builder: &ClientBuilder, base_url: url::Url, token: &str) -> Result<Self> {
+        let client = Self::reqwest_client(builder)?;
+        let login_token = LoginToken {
+            token: token.to_string(),
+            expires_in: None,
+            creation_time: None,
+        };
+
+        Self::new(builder, client, base_url, login_token)
     }
 
     fn new(
