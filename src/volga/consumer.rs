@@ -214,9 +214,9 @@ impl<'a> Builder<'a> {
 }
 
 /// Metadata on the Volga message received in `Consumer::consume`
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "kebab-case")]
-pub struct MessageMetadata {
+pub struct MessageMetadata<T> {
     /// Timestamp
     pub time: DateTime<Utc>,
 
@@ -231,7 +231,7 @@ pub struct MessageMetadata {
     pub remain: u64,
 
     /// The message payload
-    pub payload: serde_json::Value,
+    pub payload: T,
 
     /// Name of the producer
     pub producer_name: Option<String>,
@@ -264,11 +264,13 @@ impl Consumer {
 
     /// Wait for the next message from Volga
     #[tracing::instrument(skip(self), level = "trace")]
-    pub async fn consume(&mut self) -> Result<MessageMetadata> {
+    pub async fn consume<T: serde::de::DeserializeOwned + std::fmt::Debug>(
+        &mut self,
+    ) -> Result<MessageMetadata<T>> {
         let msg = super::get_binary_response(&mut self.ws).await?;
         tracing::trace!("message: {}", String::from_utf8_lossy(&msg));
 
-        let resp: MessageMetadata = serde_json::from_slice(&msg)?;
+        let resp: MessageMetadata<T> = serde_json::from_slice(&msg)?;
         self.last_seq_no = resp.seqno;
         tracing::trace!("Metadata: {:?}", resp);
 
@@ -276,36 +278,6 @@ impl Consumer {
             self.more(N_IN_AUTO_MORE).await?;
         }
         Ok(resp)
-    }
-
-    /// Wait for the next message from Volga
-    #[tracing::instrument(skip(self))]
-    async fn consume_with_ping(&mut self) -> Result<MessageMetadata> {
-        let timeout = std::time::Duration::from_secs(20);
-
-        loop {
-            // FIXME: should not have to send pings.
-            match tokio::time::timeout(timeout, super::get_binary_response(&mut self.ws)).await {
-                Err(_) => {
-                    tracing::trace!("Sending ping");
-                    let ping = tokio_tungstenite::tungstenite::Message::Ping(vec![0; 1]);
-                    self.ws.send(ping).await?;
-                }
-                Ok(msg) => {
-                    let msg = msg?;
-                    tracing::trace!("message: {}", String::from_utf8_lossy(&msg));
-
-                    let resp: MessageMetadata = serde_json::from_slice(&msg)?;
-                    self.last_seq_no = resp.seqno;
-                    tracing::trace!("Metadata: {:?}", resp);
-
-                    if resp.remain == 0 && self.options.auto_more {
-                        self.more(N_IN_AUTO_MORE).await?;
-                    }
-                    return Ok(resp);
-                }
-            }
-        }
     }
 
     pub async fn ack(&mut self, seqno: u64) -> Result<()> {
