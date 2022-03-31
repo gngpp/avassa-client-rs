@@ -78,6 +78,7 @@
 #![allow(clippy::missing_errors_doc)]
 use serde::Deserialize;
 use serde_json::json;
+use bytes::Bytes;
 
 pub mod strongbox;
 pub mod volga;
@@ -427,6 +428,38 @@ impl Client {
 
         if result.status().is_success() {
             let res = result.json().await?;
+            Ok(res)
+        } else {
+            Err(Error::WebServer(
+                result.status().as_u16(),
+                result.status().to_string(),
+            ))
+        }
+    }
+
+    /// GET a bytes payload from the REST API.
+    pub async fn get_bytes(
+        &self,
+        path: &str,
+        query_params: Option<&[(&str, &str)]>,
+    ) -> Result<Bytes> {
+        let url = self.base_url.join(path)?;
+
+        let token = self.state.lock().await.login_token.token.clone();
+
+        let mut builder = self
+            .client
+            .get(url)
+            .bearer_auth(&token);
+
+        if let Some(qp) = query_params {
+            builder = builder.query(qp);
+        }
+
+        let result = builder.send().await?;
+
+        if result.status().is_success() {
+            let res = result.bytes().await?;
             Ok(res)
         } else {
             Err(Error::WebServer(
