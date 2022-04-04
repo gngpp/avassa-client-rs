@@ -16,18 +16,21 @@ pub struct Topic {
     /// Message format
     pub format: crate::volga::Format,
     /// Sequence number
+    #[serde(default)]
     pub seqno: u64,
     /// Chunk number
+    #[serde(default)]
     pub chunkno: u64,
     /// Total number of chunks
     pub number_of_chunks: u64,
     /// Topic creation time
-    pub creation_time: chrono::DateTime<chrono::Local>,
+    pub creation_time: Option<chrono::DateTime<chrono::Local>>,
     /// Hosts topic is replicated to
     pub assigned_hosts: Vec<String>,
     /// Replication hosts leader
     pub leader_host: String,
     /// Worker hosts
+    #[serde(default)]
     pub worker_hosts: Vec<String>,
     /// Replicatation factor
     pub requested_replication_factor: usize,
@@ -35,13 +38,12 @@ pub struct Topic {
     pub current_replication_factor: usize,
     /// Persistence
     pub persistence: crate::volga::Persistence,
-    /// Topic size
-    // #[serde(rename = "size-megabyte")]
-    // #[serde(deserialize_with = "parse_size")]
-    // pub size: bytesize::ByteSize,
+    // /// Topic size
+    // pub size: Option<String>,
     /// Oldest entry timestamp
-    pub oldest_entry: chrono::DateTime<chrono::Local>,
+    pub oldest_entry: Option<chrono::DateTime<chrono::Local>>,
     /// Number of dropped chunks
+    #[serde(default)]
     pub dropped_chunks: usize,
     /// Topic labels
     pub labels: HashMap<String, String>,
@@ -66,3 +68,16 @@ struct Producer {
     name: String,
     producing_host: String,
 }
+
+// #[cfg(test)]
+// mod test {
+//     #[test]
+//     fn parse_size() {
+//         let sizes = ["976.56 KiB", "95.37 MiB"];
+//         let sizes_bytes = [999997, 1000002593];
+//         for (size, size_bytes) in sizes.iter().zip(sizes_bytes.iter()) {
+//             let s: human_size::Size = size.parse().unwrap();
+//             assert_eq!(s.to_bytes(), *size_bytes);
+//         }
+//     }
+// }

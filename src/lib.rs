@@ -65,7 +65,7 @@
 //!         Default::default())
 //!         .await?;
 //!
-//!     let message = consumer.consume().await?;
+//!     let message = consumer.consume::<String>().await?;
 //!
 //!     assert_eq!(message.payload, "test message");
 //!     Ok(())
@@ -76,9 +76,9 @@
 #![warn(clippy::pedantic)]
 #![warn(clippy::cargo)]
 #![allow(clippy::missing_errors_doc)]
+use bytes::Bytes;
 use serde::Deserialize;
 use serde_json::json;
-use bytes::Bytes;
 
 pub mod strongbox;
 pub mod volga;
@@ -447,10 +447,7 @@ impl Client {
 
         let token = self.state.lock().await.login_token.token.clone();
 
-        let mut builder = self
-            .client
-            .get(url)
-            .bearer_auth(&token);
+        let mut builder = self.client.get(url).bearer_auth(&token);
 
         if let Some(qp) = query_params {
             builder = builder.query(qp);
