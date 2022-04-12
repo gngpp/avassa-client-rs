@@ -9,7 +9,7 @@ use crate::Result;
 /// Certificate API
 pub mod tls;
 
-const SBOX_VAULTS: &str = "v1/state/strongbox/vault";
+const SBOX_VAULTS: &str = "v1/state/strongbox/vaults";
 
 /// A Strobox vault can contain one or more `Secret` key value stores.
 pub struct Vault {
