@@ -119,8 +119,8 @@ pub enum Error {
     LoginFailureMissingEnv(String),
 
     /// Failed returned by the HTTP server
-    #[error("HTTP failed {0}, {1}")]
-    WebServer(u16, String),
+    #[error("HTTP failed {0}, {1} - {2}")]
+    WebServer(u16, String, String),
 
     /// Websocket error
     #[error("Websocket error: {0}")]
@@ -430,9 +430,15 @@ impl Client {
             let res = result.json().await?;
             Ok(res)
         } else {
+            let status = result.status();
+            let error_payload = result
+                .text()
+                .await
+                .unwrap_or_else(|_| "No error payload".to_string());
             Err(Error::WebServer(
-                result.status().as_u16(),
-                result.status().to_string(),
+                status.as_u16(),
+                status.to_string(),
+                error_payload,
             ))
         }
     }
@@ -459,9 +465,15 @@ impl Client {
             let res = result.bytes().await?;
             Ok(res)
         } else {
+            let status = result.status();
+            let error_payload = result
+                .text()
+                .await
+                .unwrap_or_else(|_| "No error payload".to_string());
             Err(Error::WebServer(
-                result.status().as_u16(),
-                result.status().to_string(),
+                status.as_u16(),
+                status.to_string(),
+                error_payload,
             ))
         }
     }
@@ -511,7 +523,11 @@ impl Client {
             let resp = result.json().await;
             match resp {
                 Ok(resp) => Err(Error::REST(resp)),
-                Err(_) => Err(Error::WebServer(status.as_u16(), status.to_string())),
+                Err(_) => Err(Error::WebServer(
+                    status.as_u16(),
+                    status.to_string(),
+                    "Failed to get JSON responses".to_string(),
+                )),
             }
         }
     }
@@ -559,7 +575,11 @@ impl Client {
             let resp = result.json().await;
             match resp {
                 Ok(resp) => Err(Error::REST(resp)),
-                Err(_) => Err(Error::WebServer(status.as_u16(), status.to_string())),
+                Err(_) => Err(Error::WebServer(
+                    status.as_u16(),
+                    status.to_string(),
+                    "Failed to get JSON reply".to_string(),
+                )),
             }
         }
     }
