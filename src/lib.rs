@@ -175,11 +175,19 @@ impl Error {
 /// Result type
 pub type Result<T> = std::result::Result<T, Error>;
 
-#[derive(Deserialize)]
-pub(crate) struct LoginToken {
-    pub token: String,
-    expires_in: Option<i64>,
-    pub creation_time: Option<chrono::DateTime<chrono::offset::FixedOffset>>,
+#[derive(Clone, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+struct LoginToken {
+    token: String,
+    expires_in: i64,
+    expires: chrono::DateTime<chrono::FixedOffset>,
+    creation_time: chrono::DateTime<chrono::FixedOffset>,
+}
+
+impl LoginToken {
+    fn renew_at(&self) -> chrono::DateTime<chrono::FixedOffset> {
+        self.expires - chrono::Duration::seconds(self.expires_in * 1 / 4)
+    }
 }
 
 impl std::fmt::Debug for LoginToken {
@@ -350,8 +358,8 @@ impl Client {
             .await?;
 
         if result.status().is_success() {
-            let text = result.text().await?;
-            let login_token = serde_json::from_str::<LoginToken>(&text)?;
+            let login_token = result.json().await?;
+
             Self::new(builder, client, base_url, login_token)
         } else {
             let text = result.text().await?;
@@ -383,10 +391,14 @@ impl Client {
 
     fn new_from_token(builder: &ClientBuilder, base_url: url::Url, token: &str) -> Result<Self> {
         let client = Self::reqwest_client(builder)?;
+        let creation_time = chrono::Local::now().into();
+        let expires = creation_time + chrono::Duration::seconds(1);
+
         let login_token = LoginToken {
             token: token.to_string(),
-            expires_in: None,
-            creation_time: None,
+            expires_in: 1,
+            creation_time,
+            expires,
         };
 
         Self::new(builder, client, base_url, login_token)
@@ -400,7 +412,20 @@ impl Client {
     ) -> Result<Self> {
         let websocket_url = url::Url::parse(&format!("wss://{}/v1/ws/", base_url.host_port()?))?;
 
-        let state = ClientState { login_token };
+        let renew_at = login_token.renew_at();
+
+        let state = std::sync::Arc::new(tokio::sync::Mutex::new(ClientState { login_token }));
+
+        let weak_state = std::sync::Arc::downgrade(&state);
+        let refresh_url = base_url.join("/v1/state/strongbox/token/refresh")?;
+        let client = client.clone();
+
+        tokio::spawn(renew_token_task(
+            weak_state,
+            renew_at,
+            client.clone(),
+            refresh_url,
+        ));
 
         Ok(Self {
             client,
@@ -409,7 +434,7 @@ impl Client {
             disable_hostname_check: builder.disable_hostname_check,
             base_url,
             websocket_url,
-            state: std::sync::Arc::new(tokio::sync::Mutex::new(state)),
+            state,
         })
     }
 
@@ -427,7 +452,7 @@ impl Client {
     ) -> Result<T> {
         let url = self.base_url.join(path)?;
 
-        let token = self.state.lock().await.login_token.token.clone();
+        let token = self.bearer_token().await;
 
         let mut builder = self
             .client
@@ -465,7 +490,7 @@ impl Client {
     ) -> Result<Bytes> {
         let url = self.base_url.join(path)?;
 
-        let token = self.state.lock().await.login_token.token.clone();
+        let token = self.bearer_token().await;
 
         let mut builder = self.client.get(url).bearer_auth(&token);
 
@@ -501,7 +526,7 @@ impl Client {
         data: &serde_json::Value,
     ) -> Result<serde_json::Value> {
         let url = self.base_url.join(path)?;
-        let token = self.state.lock().await.login_token.token.clone();
+        let token = self.bearer_token().await;
 
         tracing::debug!("POST {} {:?}", url, data);
 
@@ -696,6 +721,68 @@ impl URLExt for url::Url {
             (host, Some(port)) => format!("{}:{}", host, port),
             (host, _) => host.to_string(),
         })
+    }
+}
+
+#[tracing::instrument(skip(next_renew_at, weak_state, client, refresh_url))]
+async fn renew_token_task(
+    weak_state: std::sync::Weak<tokio::sync::Mutex<ClientState>>,
+    mut next_renew_at: chrono::DateTime<chrono::FixedOffset>,
+    client: reqwest::Client,
+    refresh_url: url::Url,
+) {
+    loop {
+        let now: chrono::DateTime<chrono::FixedOffset> = chrono::Local::now().into();
+        let sleep_time = next_renew_at - now;
+
+        tracing::debug!("renew token in {sleep_time}");
+
+        tokio::time::sleep(
+            sleep_time
+                .to_std()
+                .unwrap_or_else(|_| std::time::Duration::from_secs(0)),
+        )
+        .await;
+
+        if let Some(state) = weak_state.upgrade() {
+            let mut state = state.lock().await;
+            let response = client
+                .post(refresh_url.clone())
+                .bearer_auth(&state.login_token.token)
+                .send()
+                .await;
+
+            let response = match response {
+                Ok(r) => r,
+                Err(e) => {
+                    tracing::error!("Failed to renew token: {e}");
+                    let now: chrono::DateTime<chrono::FixedOffset> = chrono::Local::now().into();
+                    next_renew_at = now + chrono::Duration::seconds(1);
+                    continue;
+                }
+            };
+
+            let text = response.text().await.unwrap();
+            let new_login_token = serde_json::from_str::<LoginToken>(&text);
+
+            match new_login_token {
+                Ok(new_login_token) => {
+                    next_renew_at = new_login_token.renew_at();
+                    state.login_token = new_login_token;
+                    tracing::debug!("Successfully renewed token");
+                }
+                Err(e) => {
+                    tracing::error!("Failed to parse or get token: {e}");
+                    // After failure, we check every second
+                    let now: chrono::DateTime<chrono::FixedOffset> = chrono::Local::now().into();
+                    next_renew_at = now + chrono::Duration::seconds(1);
+                }
+            }
+        } else {
+            tracing::info!("renew_token: State lost");
+            // If we can't get the state, the client is gone and we should go as well
+            break;
+        }
     }
 }
 
