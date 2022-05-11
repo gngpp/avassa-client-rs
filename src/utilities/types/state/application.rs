@@ -2,6 +2,14 @@
 //! Application state
 //!
 
+#[allow(missing_docs)]
+#[derive(Debug, serde::Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub struct Application {
+    pub name: String,
+    pub config_modified_time: chrono::DateTime<chrono::FixedOffset>,
+}
+
 /// Service instance state
 #[allow(missing_docs)]
 #[derive(Debug, serde::Deserialize)]
