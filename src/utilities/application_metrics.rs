@@ -2,6 +2,31 @@
 //! Metrics
 //!
 
+#[derive(Debug, Clone, serde::Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub struct Memory {
+    pub used: u64,
+    pub total: u64,
+    pub percentage_used: f64,
+}
+
+#[derive(Debug, Clone, serde::Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub struct CPU {
+    pub nanoseconds: u64,
+    pub cpus: f64,
+    pub shares: u64,
+}
+
+#[derive(Debug, Clone, serde::Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub struct ContainerLayer {
+    pub size: u64,
+    pub used: u64,
+    pub free: u64,
+    pub percentage_used: f64,
+}
+
 /// Container metrics
 #[derive(Debug, Clone, serde::Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -12,9 +37,12 @@ pub struct ContainerMetric {
     pub container: String,
 
     /// Memory consumed
-    pub memory_bytes: Option<u64>,
+    pub memory: Memory,
     /// CPU consumed
-    pub cpu_nanoseconds: Option<u64>,
+    pub cpu: CPU,
+
+    /// Container layer
+    pub container_layer: ContainerLayer,
 }
 
 /// Network metrics
@@ -44,7 +72,7 @@ pub struct ApplicationMetric {
 #[serde(rename_all = "kebab-case")]
 pub struct MetricEntry {
     /// Metric timestamp
-    pub time: chrono::DateTime<chrono::Utc>,
+    pub time: chrono::DateTime<chrono::FixedOffset>,
     /// Site host
     pub host: String,
     /// Application name
