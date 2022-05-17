@@ -203,6 +203,7 @@ pub struct ClientBuilder {
     tls_ca: Vec<tokio_native_tls::native_tls::Certificate>,
     disable_hostname_check: bool,
     disable_cert_verification: bool,
+    connection_verbose: bool,
 }
 
 impl ClientBuilder {
@@ -214,6 +215,7 @@ impl ClientBuilder {
             tls_ca: Vec::new(),
             disable_cert_verification: false,
             disable_hostname_check: false,
+            connection_verbose: false,
         }
     }
 
@@ -240,6 +242,15 @@ impl ClientBuilder {
     pub fn danger_accept_invalid_hostnames(self) -> Self {
         Self {
             disable_hostname_check: true,
+            ..self
+        }
+    }
+    /// Enabling this option will emit log messages at the TRACE level for read and write operations
+    /// on the https client
+    #[must_use]
+    pub fn enable_verbose_connection(self) -> Self {
+        Self {
+            connection_verbose: true,
             ..self
         }
     }
@@ -362,6 +373,9 @@ impl Client {
 
         let reqwest_client_builder =
             reqwest_client_builder.danger_accept_invalid_certs(builder.disable_cert_verification);
+
+        let reqwest_client_builder =
+            reqwest_client_builder.connection_verbose(builder.connection_verbose);
 
         let client = reqwest_client_builder.build()?;
         Ok(client)
