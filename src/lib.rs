@@ -186,7 +186,7 @@ struct LoginToken {
 
 impl LoginToken {
     fn renew_at(&self) -> chrono::DateTime<chrono::FixedOffset> {
-        self.expires - chrono::Duration::seconds(self.expires_in * 1 / 4)
+        self.expires - chrono::Duration::seconds(self.expires_in / 4)
     }
 }
 
@@ -212,6 +212,7 @@ pub struct ClientBuilder {
     disable_hostname_check: bool,
     disable_cert_verification: bool,
     connection_verbose: bool,
+    auto_renew_token: bool,
 }
 
 impl ClientBuilder {
@@ -224,6 +225,7 @@ impl ClientBuilder {
             disable_cert_verification: false,
             disable_hostname_check: false,
             connection_verbose: false,
+            auto_renew_token: true,
         }
     }
 
@@ -259,6 +261,15 @@ impl ClientBuilder {
     pub fn enable_verbose_connection(self) -> Self {
         Self {
             connection_verbose: true,
+            ..self
+        }
+    }
+
+    /// Disable auto renewal of authentication token
+    #[must_use]
+    pub fn disable_token_auto_renewal(self) -> Self {
+        Self {
+            auto_renew_token: false,
             ..self
         }
     }
@@ -418,14 +429,15 @@ impl Client {
 
         let weak_state = std::sync::Arc::downgrade(&state);
         let refresh_url = base_url.join("/v1/state/strongbox/token/refresh")?;
-        let client = client.clone();
 
-        tokio::spawn(renew_token_task(
-            weak_state,
-            renew_at,
-            client.clone(),
-            refresh_url,
-        ));
+        if builder.auto_renew_token {
+            tokio::spawn(renew_token_task(
+                weak_state,
+                renew_at,
+                client.clone(),
+                refresh_url,
+            ));
+        }
 
         Ok(Self {
             client,
