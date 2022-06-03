@@ -206,6 +206,7 @@ struct ClientState {
 
 /// Builder for an Avassa [`Client`]
 #[derive(Clone)]
+#[allow(clippy::struct_excessive_bools)]
 pub struct ClientBuilder {
     reqwest_ca: Vec<reqwest::Certificate>,
     tls_ca: Vec<tokio_native_tls::native_tls::Certificate>,
