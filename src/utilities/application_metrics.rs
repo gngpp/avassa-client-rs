@@ -147,37 +147,39 @@ mod tests {
         );
     }
 
-    #[test]
-    fn per_application() {
-        let json = r#" {
-      "time": "2021-09-22T11:45:55.134Z",
-      "host": "sthlm-002",
-      "application": "popcorn-controller",
-      "per-container": {
-        "service-instance": "popcorn-controller-service-1",
-        "container": "kettle-popper-manager",
-        "memory-bytes": 2428928,
-        "cpu-nanoseconds": 89024322
-      }
-    }"#;
-        let entry: super::MetricEntry = serde_json::from_str(json).unwrap();
+    // Removed untils metrics stabilize
+    //
+    // #[test]
+    // fn per_application() {
+    //     let json = r#" {
+    //   "time": "2021-09-22T11:45:55.134Z",
+    //   "host": "sthlm-002",
+    //   "application": "popcorn-controller",
+    //   "per-container": {
+    //     "service-instance": "popcorn-controller-service-1",
+    //     "container": "kettle-popper-manager",
+    //     "memory-bytes": 2428928,
+    //     "cpu-nanoseconds": 89024322
+    //   }
+    // }"#;
+    //     let entry: super::MetricEntry = serde_json::from_str(json).unwrap();
 
-        assert!(entry.per_container.is_some());
-        assert_eq!(
-            entry.per_container.as_ref().unwrap().service_instance,
-            "popcorn-controller-service-1"
-        );
-        assert_eq!(
-            entry.per_container.as_ref().unwrap().container,
-            "kettle-popper-manager"
-        );
-        assert_eq!(
-            entry.per_container.as_ref().unwrap().memory_bytes,
-            Some(2428928)
-        );
-        assert_eq!(
-            entry.per_container.as_ref().unwrap().cpu_nanoseconds,
-            Some(89024322)
-        );
-    }
+    //     assert!(entry.per_container.is_some());
+    //     assert_eq!(
+    //         entry.per_container.as_ref().unwrap().service_instance,
+    //         "popcorn-controller-service-1"
+    //     );
+    //     assert_eq!(
+    //         entry.per_container.as_ref().unwrap().container,
+    //         "kettle-popper-manager"
+    //     );
+    //     assert_eq!(
+    //         entry.per_container.as_ref().unwrap().memory_bytes,
+    //         Some(2428928)
+    //     );
+    //     assert_eq!(
+    //         entry.per_container.as_ref().unwrap().cpu_nanoseconds,
+    //         Some(89024322)
+    //     );
+    // }
 }
