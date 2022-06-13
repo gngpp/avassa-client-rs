@@ -13,6 +13,7 @@ keywords = ["avassa"]
 [features]
 utilities = []
 login-helper = []
+supctl = []
 
 [dependencies]
 bytesize = { version = "1", features = ["serde"] }
@@ -32,4 +33,4 @@ url = "2"
 bytes = "1.1.0"
 
 [dev-dependencies]
-tokio = { version="1", features = ["macros", "rt-multi-thread"] }
+tokio = { version="1", features = ["macros", "rt-multi-thread", "fs"] }
