@@ -214,6 +214,8 @@ pub struct ClientBuilder {
     disable_cert_verification: bool,
     connection_verbose: bool,
     auto_renew_token: bool,
+    timeout: Option<core::time::Duration>,
+    connect_timeout: Option<core::time::Duration>,
 }
 
 impl ClientBuilder {
@@ -227,6 +229,24 @@ impl ClientBuilder {
             disable_hostname_check: false,
             connection_verbose: false,
             auto_renew_token: true,
+            timeout: None,
+            connect_timeout: None
+        }
+    }
+
+    /// Enables a request timeout
+    pub fn timeout(self, timeout: core::time::Duration) -> Self {
+        Self {
+            timeout: Some(timeout),
+            ..self
+        }
+    }
+
+    /// Set a timeout for only the connect phase of a Client
+    pub fn connection_timeout(self, timeout: core::time::Duration) -> Self {
+        Self {
+            connect_timeout: Some(timeout),
+            ..self
         }
     }
 
@@ -396,6 +416,18 @@ impl Client {
 
         let reqwest_client_builder =
             reqwest_client_builder.connection_verbose(builder.connection_verbose);
+
+        let reqwest_client_builder = if let Some(duration) = builder.timeout {
+            reqwest_client_builder.timeout(duration)
+        } else {
+            reqwest_client_builder
+        };
+
+        let reqwest_client_builder = if let Some(duration) = builder.connect_timeout {
+            reqwest_client_builder.connect_timeout(duration)
+        } else {
+            reqwest_client_builder
+        };
 
         let client = reqwest_client_builder.build()?;
         Ok(client)
