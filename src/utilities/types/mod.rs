@@ -5,7 +5,7 @@
 use serde::{Deserialize, Serialize};
 
 /// Type of datacenter
-#[derive(Debug, Deserialize, Serialize, PartialEq)]
+#[derive(Debug, Deserialize, Serialize, Eq, PartialEq)]
 pub enum SiteType {
     /// Edge Enforcer
     #[serde(rename = "edge")]

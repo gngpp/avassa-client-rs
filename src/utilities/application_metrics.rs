@@ -64,7 +64,7 @@ pub struct GatewayNetwork {
 #[serde(rename_all = "kebab-case")]
 pub struct ApplicationMetric {
     /// Network metrics
-    pub gateway_network: GatewayNetwork,
+    pub gateway_network: Option<GatewayNetwork>,
 }
 
 /// Application/container metrics

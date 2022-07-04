@@ -1,6 +1,13 @@
 /// Host Metrics
 #[allow(missing_docs)]
 
+/// CPU
+#[derive(Debug, Clone, serde::Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub struct CPU {
+    pub vcpus: u64,
+}
+
 /// Memory
 #[derive(Debug, Clone, serde::Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -40,22 +47,15 @@ pub struct Disk {
     pub mount: String,
 }
 
-/// Application/container metrics
-#[derive(Debug, Clone, serde::Deserialize)]
-#[serde(rename_all = "kebab-case")]
-pub struct MetricData {
-    pub site: String,
-    pub hostname: String,
-    pub memory: Memory,
-    pub loadavg: LoadAvg,
-    pub disk: Vec<Disk>,
-}
-
 /// Matrics
 #[derive(Debug, Clone, serde::Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct Metrics {
-    pub occurred_at: chrono::DateTime<chrono::FixedOffset>,
-    pub tenant: String,
-    pub data: MetricData,
+    pub time: chrono::DateTime<chrono::FixedOffset>,
+    pub site: String,
+    pub hostname: String,
+    pub cpu: CPU,
+    pub memory: Memory,
+    pub loadavg: LoadAvg,
+    pub disk: Vec<Disk>,
 }

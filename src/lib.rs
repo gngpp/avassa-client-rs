@@ -230,11 +230,12 @@ impl ClientBuilder {
             connection_verbose: false,
             auto_renew_token: true,
             timeout: None,
-            connect_timeout: None
+            connect_timeout: None,
         }
     }
 
     /// Enables a request timeout
+    #[must_use]
     pub fn timeout(self, timeout: core::time::Duration) -> Self {
         Self {
             timeout: Some(timeout),
@@ -243,6 +244,7 @@ impl ClientBuilder {
     }
 
     /// Set a timeout for only the connect phase of a Client
+    #[must_use]
     pub fn connection_timeout(self, timeout: core::time::Duration) -> Self {
         Self {
             connect_timeout: Some(timeout),

@@ -13,7 +13,7 @@ type WebSocketStream =
     tokio_tungstenite::WebSocketStream<tokio_native_tls::TlsStream<tokio::net::TcpStream>>;
 
 /// Volga stream persistence
-#[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq)]
+#[derive(Clone, Copy, Debug, Deserialize, Serialize, Eq, PartialEq)]
 pub enum Persistence {
     /// Persist messages to disk
     #[serde(rename = "disk")]
@@ -24,7 +24,7 @@ pub enum Persistence {
 }
 
 /// Format of the data on the volga topic
-#[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq)]
+#[derive(Clone, Copy, Debug, Deserialize, Serialize, Eq, PartialEq)]
 pub enum Format {
     /// JSON format
     #[serde(rename = "json")]
@@ -73,7 +73,7 @@ impl Serialize for OnNoExists {
 }
 
 /// Local or NAT connection
-#[derive(Clone, Copy, Debug, Serialize, PartialEq)]
+#[derive(Clone, Copy, Debug, Serialize, Eq, PartialEq)]
 #[serde(rename_all = "kebab-case")]
 pub enum Location {
     Local,
