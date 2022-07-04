@@ -49,7 +49,7 @@ pub struct Topic {
     pub labels: HashMap<String, String>,
 }
 
-#[derive(Debug, Deserialize, Serialize, PartialEq)]
+#[derive(Debug, Deserialize, Serialize, Eq, PartialEq)]
 #[serde(rename_all = "kebab-case")]
 struct Consumer {
     #[serde(rename = "consumer-name")]
@@ -61,7 +61,7 @@ struct Consumer {
     consuming_host: String,
 }
 
-#[derive(Debug, Deserialize, Serialize, PartialEq)]
+#[derive(Debug, Deserialize, Serialize, Eq, PartialEq)]
 #[serde(rename_all = "kebab-case")]
 struct Producer {
     #[serde(rename = "producer-name")]
