@@ -32,6 +32,8 @@ pub mod config {}
 /// State types
 pub mod state {
     pub mod application;
+    pub mod application_deployment;
+    pub mod cluster_host;
     pub mod site;
     pub mod volga;
 }

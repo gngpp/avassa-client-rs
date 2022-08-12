@@ -783,6 +783,7 @@ async fn renew_token_task(
 ) {
     loop {
         let now: chrono::DateTime<chrono::FixedOffset> = chrono::Local::now().into();
+        chrono::Utc::now();
         let sleep_time = next_renew_at - now;
 
         tracing::debug!("renew token in {sleep_time}");
