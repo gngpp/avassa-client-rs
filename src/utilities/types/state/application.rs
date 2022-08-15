@@ -8,6 +8,8 @@
 pub struct Application {
     pub name: String,
     pub config_modified_time: chrono::DateTime<chrono::FixedOffset>,
+    pub oper_status: OperStatus,
+    pub service_instances: Vec<ServiceInstance>,
 }
 
 /// Service instance state
@@ -16,7 +18,7 @@ pub struct Application {
 #[serde(rename_all = "kebab-case")]
 pub struct ServiceInstance {
     pub name: String,
-    pub oper_status: Operstatus,
+    pub oper_status: OperStatus,
     pub host: String,
     // application-network:
     //   ips:
@@ -34,13 +36,23 @@ pub struct ServiceInstance {
     //   - name: setup
     //     oper-status: completed
     pub containers: Vec<Container>,
+
+    pub ingress: Ingress,
+}
+
+/// Ingress information
+#[derive(Debug, serde::Deserialize)]
+#[serde(rename_all = "kebab-case")]
+#[allow(missing_docs)]
+pub struct Ingress {
+    pub ips: Vec<std::net::IpAddr>,
 }
 
 /// State of the application
 #[allow(missing_docs)]
 #[derive(Debug, serde::Deserialize)]
 #[serde(rename_all = "kebab-case")]
-pub enum Operstatus {
+pub enum OperStatus {
     Running,
     AdminDown,
     Upgrading,
@@ -55,7 +67,7 @@ pub enum Operstatus {
 pub struct Container {
     pub name: String,
     pub id: String,
-    pub oper_status: Operstatus,
+    pub oper_status: OperStatus,
     pub start_time: chrono::DateTime<chrono::Local>,
     pub current_restarts: u64,
     pub total_restarts: u64,
