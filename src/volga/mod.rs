@@ -2,7 +2,7 @@
 //! Library for producing and consuming Volga messages.
 //!
 use crate::{Error, Result};
-use futures_util::StreamExt;
+use futures_util::{SinkExt, StreamExt};
 use serde::{Deserialize, Serialize};
 
 pub mod consumer;
@@ -120,6 +120,11 @@ async fn get_binary_response(ws: &mut WebSocketStream) -> Result<Vec<u8>> {
             .ok_or_else(|| Error::Volga(Some("Expected websocket message".to_string())))??;
 
         match resp {
+            tokio_tungstenite::tungstenite::Message::Ping(data) => {
+                tracing::trace!("Received ping");
+                let msg = tokio_tungstenite::tungstenite::Message::Pong(data);
+                ws.send(msg).await?;
+            }
             tokio_tungstenite::tungstenite::Message::Pong(_) => continue,
             tokio_tungstenite::tungstenite::Message::Binary(m) => return Ok(m),
             tokio_tungstenite::tungstenite::Message::Close(_) => {
@@ -141,7 +146,11 @@ async fn get_ok_volga_response(ws: &mut WebSocketStream) -> Result<()> {
     tracing::trace!("volga response {:?}", resp);
     match resp.result {
         VolgaResult::Ok => Ok(()),
-        VolgaResult::Error => Err(Error::Volga(resp.info)),
+        VolgaResult::Error => {
+            let err_msg = serde_json::to_string(&resp.errors)
+                .unwrap_or_else(|e| format!("Failed to decode volga error: {e}"));
+            Err(Error::Volga(Some(err_msg)))
+        }
     }
 }
 
@@ -156,7 +165,8 @@ enum VolgaResult {
 #[derive(Debug, Deserialize)]
 struct VolgaResponse {
     result: VolgaResult,
-    info: Option<String>,
+    #[serde(default)]
+    errors: Vec<serde_json::Value>,
 }
 
 #[cfg(test)]
@@ -169,7 +179,10 @@ mod test {
         let fail = serde_json::to_string(&super::OnNoExists::Fail).unwrap();
         assert_eq!(&fail, r#"{"on-no-exists":"fail"}"#);
 
-        let create = serde_json::to_string(&super::OnNoExists::Create(Default::default())).unwrap();
+        let create = serde_json::to_string(&super::OnNoExists::Create(
+            crate::volga::CreateOptions::default(),
+        ))
+        .unwrap();
         assert_eq!(
             &create,
             r#"{"on-no-exists":"create","create-options":{"replication-factor":1,"persistence":"disk","num-chunks":100,"format":"json","ephemeral":false}}"#
