@@ -1,3 +1,7 @@
+# 0.2.5
+- Fixed volga error message
+- Support Websocket ping from server
+
 # 0.2.2
 
 - Automatically renews login tokens
