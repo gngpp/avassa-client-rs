@@ -112,6 +112,7 @@ impl Default for CreateOptions {
     }
 }
 
+#[tracing::instrument(skip(ws))]
 async fn get_binary_response(ws: &mut WebSocketStream) -> Result<Vec<u8>> {
     loop {
         let resp = ws

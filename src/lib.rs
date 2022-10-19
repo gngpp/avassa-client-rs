@@ -321,6 +321,7 @@ impl ClientBuilder {
 
     /// Login to an avassa Control Tower or Edge Enforcer instance. If possible,
     /// please use the `application_login` as no credentials needs to be distributed.
+    #[tracing::instrument(skip(self, password))]
     pub async fn login(&self, host: &str, username: &str, password: &str) -> Result<Client> {
         let base_url = url::Url::parse(host)?;
         let url = base_url.join("v1/login")?;
@@ -334,6 +335,7 @@ impl ClientBuilder {
     }
 
     /// Login using an existing bearer token
+    #[tracing::instrument(skip(self, token))]
     pub fn token_login(&self, host: &str, token: &str) -> Result<Client> {
         let base_url = url::Url::parse(host)?;
         Client::new_from_token(self, base_url, token)
@@ -699,6 +701,7 @@ impl Client {
     }
 
     /// Creates and opens a Volga consumer
+    #[tracing::instrument]
     pub async fn volga_open_consumer(
         &self,
         consumer_name: &str,
@@ -725,6 +728,7 @@ impl Client {
             .await
     }
 
+    #[tracing::instrument(skip(self))]
     pub(crate) async fn open_tls_stream(
         &self,
     ) -> Result<tokio_native_tls::TlsStream<tokio::net::TcpStream>> {

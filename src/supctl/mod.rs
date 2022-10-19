@@ -1,4 +1,4 @@
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum TokenType {
     User,
     Tenant,
@@ -6,7 +6,8 @@ pub enum TokenType {
 }
 
 /// Try to login using a supctl path
-pub async fn login<P: AsRef<std::path::Path>>(
+#[tracing::instrument]
+pub async fn login<P: AsRef<std::path::Path> + std::fmt::Debug>(
     supctl_path: P,
     token_type: TokenType,
 ) -> crate::Result<crate::Client> {
@@ -29,15 +30,21 @@ pub async fn login<P: AsRef<std::path::Path>>(
 
     let client = crate::Client::builder()
         .danger_accept_invalid_certs()
-        .danger_accept_invalid_hostnames()
-        .token_login(&url, &token.token)?;
+        .danger_accept_invalid_hostnames();
+
+    let client = match token_type {
+        TokenType::Seal => client.disable_token_auto_renewal(),
+        _ => client,
+    };
+
+    let client = client.token_login(&url, &token.token)?;
     Ok(client)
 }
 
 #[derive(serde::Deserialize)]
 struct Cfg {
     host: String,
-    port: String,
+    port: u16,
 }
 
 #[derive(serde::Deserialize)]
