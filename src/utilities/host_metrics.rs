@@ -51,7 +51,7 @@ pub struct Disk {
 #[derive(Debug, Clone, serde::Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct Metrics {
-    pub time: chrono::DateTime<chrono::FixedOffset>,
+    pub time: chrono::DateTime<chrono::Utc>,
     pub site: String,
     pub hostname: String,
     pub cpu: CPU,

@@ -64,6 +64,16 @@ pub mod state {
         Ok(si)
     }
 
+    pub async fn applications(
+        client: &Client,
+    ) -> crate::Result<Vec<types::state::application::Application>> {
+        let app = client
+            .get_json(&format!("/v1/state/applications"), None)
+            .await?;
+
+        Ok(app)
+    }
+
     pub async fn application(
         client: &Client,
         application: &str,
