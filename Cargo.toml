@@ -1,6 +1,6 @@
 [package]
 name = "avassa-client"
-version = "0.2.6"
+version = "0.2.7"
 authors = ["Fredrik Jansson <fj@avassa.io>"]
 license = "Apache-2.0"
 edition = "2021"
