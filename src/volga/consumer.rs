@@ -54,6 +54,7 @@ struct OpenConsumer<'a> {
     position_timestamp: Option<chrono::DateTime<chrono::Local>>,
     #[serde(flatten)]
     on_no_exists: super::OnNoExists,
+    mode: Mode,
 }
 
 impl Default for Options {
@@ -173,6 +174,7 @@ impl<'a> Builder<'a> {
             child_site: self.child_site,
             topic: self.topic,
             name: self.name,
+            mode: self.options.mode,
             position: match self.options.position {
                 Position::SequenceNumber(_seqno) => "seqno",
                 Position::TimeStamp(_ts) => "timestamp",
