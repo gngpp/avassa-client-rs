@@ -58,6 +58,7 @@ pub enum OperStatus {
     Upgrading,
     Starting,
     Error,
+    Failed,
 }
 
 /// Container state
