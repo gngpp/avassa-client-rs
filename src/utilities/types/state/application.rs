@@ -7,7 +7,7 @@
 #[serde(rename_all = "kebab-case")]
 pub struct Application {
     pub name: String,
-    pub config_modified_time: chrono::DateTime<chrono::FixedOffset>,
+    pub config_modified_time: chrono::DateTime<chrono::Utc>,
     pub oper_status: OperStatus,
     pub service_instances: Vec<ServiceInstance>,
 }

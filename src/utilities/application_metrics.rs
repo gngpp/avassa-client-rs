@@ -72,7 +72,7 @@ pub struct ApplicationMetric {
 #[serde(rename_all = "kebab-case")]
 pub struct MetricEntry {
     /// Metric timestamp
-    pub time: chrono::DateTime<chrono::FixedOffset>,
+    pub time: chrono::DateTime<chrono::Utc>,
     /// Site host
     pub host: String,
     /// Application name
