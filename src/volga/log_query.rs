@@ -3,7 +3,6 @@ use futures_util::{
     stream::{Stream, StreamExt},
     SinkExt,
 };
-use pin_project_lite::pin_project;
 use serde::Serialize;
 use tokio_tungstenite::tungstenite::{client::IntoClientRequest, Message as WSMessage};
 
@@ -169,11 +168,10 @@ impl Query {
     }
 }
 
-pin_project! {
-    /// Stream for query results
-    pub struct QueryStream {
-        ws: super::WebSocketStream,
-    }
+/// Stream for query results
+#[pin_project::pin_project]
+pub struct QueryStream {
+    ws: super::WebSocketStream,
 }
 
 impl Default for Query {

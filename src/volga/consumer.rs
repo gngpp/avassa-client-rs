@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tokio_tungstenite::tungstenite::{client::IntoClientRequest, Message as WSMessage};
 
-const N_IN_AUTO_MORE: usize = 5;
+const N_IN_AUTO_MORE: u64 = 5;
 
 /// Volga stream mode
 #[derive(Clone, Copy, Debug, Deserialize, Serialize, Eq, PartialEq)]
@@ -205,6 +205,7 @@ impl<'a> Builder<'a> {
             ws,
             options: self.options,
             last_seq_no: 0,
+            last_remain: N_IN_AUTO_MORE,
         };
 
         if consumer.options.auto_more {
@@ -244,13 +245,15 @@ pub struct Consumer {
     ws: WebSocketStream,
     options: Options,
     last_seq_no: u64,
+    // Last indicated remain when consuming, stored in case consume is cancelled.
+    last_remain: u64,
 }
 
 impl Consumer {
     /// Indicate the client is ready for n more messages. If `auto_more` is set in the
     /// options, this is automatically handled.
     #[tracing::instrument(skip(self), level = "debug")]
-    pub async fn more(&mut self, n: usize) -> Result<()> {
+    pub async fn more(&mut self, n: u64) -> Result<()> {
         let cmd = json!( {
             "op": "more",
             "n": n,
@@ -261,6 +264,8 @@ impl Consumer {
             .send(WSMessage::Binary(serde_json::to_vec(&cmd)?))
             .await?;
 
+        self.last_remain = n;
+
         Ok(())
     }
 
@@ -269,6 +274,11 @@ impl Consumer {
     pub async fn consume<T: serde::de::DeserializeOwned + std::fmt::Debug>(
         &mut self,
     ) -> Result<MessageMetadata<T>> {
+        // Do we need to indicate we need more messages?
+        if self.last_remain == 0 && self.options.auto_more {
+            self.more(N_IN_AUTO_MORE).await?;
+        }
+
         let msg = super::get_binary_response(&mut self.ws).await?;
         tracing::trace!("message: {}", String::from_utf8_lossy(&msg));
 
@@ -276,9 +286,8 @@ impl Consumer {
         self.last_seq_no = resp.seqno;
         tracing::trace!("Metadata: {:?}", resp);
 
-        if resp.remain == 0 && self.options.auto_more {
-            self.more(N_IN_AUTO_MORE).await?;
-        }
+        self.last_remain = resp.remain;
+
         Ok(resp)
     }
 
@@ -300,4 +309,16 @@ impl Consumer {
     pub const fn last_seq_no(&self) -> u64 {
         self.last_seq_no
     }
+
+    // pub fn as_stream<'a, T>(
+    //     &'a mut self,
+    // ) -> impl futures_util::Stream<Item = Result<MessageMetadata<T>>> + 'a
+    // where
+    //     T: serde::de::DeserializeOwned + std::fmt::Debug,
+    // {
+    //     futures_util::stream::unfold(self, |this| async {
+    //         let msg = this.consume::<T>().await;
+    //         Some((msg, this))
+    //     })
+    // }
 }
