@@ -309,16 +309,4 @@ impl Consumer {
     pub const fn last_seq_no(&self) -> u64 {
         self.last_seq_no
     }
-
-    // pub fn as_stream<'a, T>(
-    //     &'a mut self,
-    // ) -> impl futures_util::Stream<Item = Result<MessageMetadata<T>>> + 'a
-    // where
-    //     T: serde::de::DeserializeOwned + std::fmt::Debug,
-    // {
-    //     futures_util::stream::unfold(self, |this| async {
-    //         let msg = this.consume::<T>().await;
-    //         Some((msg, this))
-    //     })
-    // }
 }

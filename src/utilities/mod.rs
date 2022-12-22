@@ -4,6 +4,7 @@
 
 pub mod application_metrics;
 pub mod host_metrics;
+pub mod supd_metrics;
 pub mod types;
 
 /// State utility functions
