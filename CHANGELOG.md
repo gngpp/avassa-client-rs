@@ -1,3 +1,9 @@
+# 0.2.10
+- Send web socket close frame on consumer drop
+
+# 0.2.6
+- Added supd metrics deserialization
+
 # 0.2.5
 - Fixed volga error message
 - Support Websocket ping from server
