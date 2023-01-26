@@ -86,6 +86,10 @@ pub struct MetricEntry {
 /// Matrics
 #[derive(Debug, Clone, serde::Deserialize)]
 pub struct Metrics {
+    /// Tenant name
+    pub tenant: String,
+    /// Site name
+    pub site: String,
     /// Metric entires
     pub entries: Vec<MetricEntry>,
 }

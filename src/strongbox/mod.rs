@@ -35,8 +35,8 @@ impl Vault {
     }
 
     pub(crate) async fn open(client: &Client, vault: &str) -> Result<Self> {
-        let vault_url = format!("{}/{}", SBOX_VAULTS, vault);
-        tracing::debug!("Opening vault at path: {}", vault_url);
+        let vault_url = format!("{SBOX_VAULTS}/{vault}");
+        tracing::debug!("Opening vault at path: {vault_url}");
         // Try to get the sbox vault
         let _vault: serde_json::Value = client.get_json(&vault_url, None).await?;
         Ok(Self {
@@ -47,7 +47,7 @@ impl Vault {
 
     /// Open a secret
     pub async fn open_secrets(&self, name: &str) -> Result<Secrets> {
-        let map_url = format!("{}/secrets/{}", self.vault_url, name);
+        let map_url = format!("{}/secrets/{name}", self.vault_url);
 
         let json: serde_json::Value = self.client.get_json(&map_url, None).await?;
 

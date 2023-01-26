@@ -24,10 +24,7 @@ pub mod ca {
     /// Returns all roles for a CA certificate
     pub async fn certificate_roles(client: &Client, ca_name: &str) -> Result<Vec<Role>> {
         let roles = client
-            .get_json(
-                &format!("/v1/config/strongbox/tls/ca/{}/role", ca_name),
-                None,
-            )
+            .get_json(&format!("/v1/config/strongbox/tls/ca/{ca_name}/role"), None)
             .await?;
         Ok(roles)
     }
@@ -49,7 +46,7 @@ pub mod ca {
     ) -> Result<()> {
         let _put_result = client
             .put_json(
-                &format!("/v1/config/strongbox/tls/ca/{}/role/{}", ca_name, role.name),
+                &format!("/v1/config/strongbox/tls/ca/{ca_name}/role/{}", role.name),
                 &serde_json::to_value(role)?,
             )
             .await?;
@@ -94,10 +91,7 @@ pub mod server_certificate {
 
         let cert = client
             .post_json(
-                &format!(
-                    "/v1/state/strongbox/tls/ca/{}/role/{}/issue-cert",
-                    ca_name, role_name
-                ),
+                &format!("/v1/state/strongbox/tls/ca/{ca_name}/role/{role_name}/issue-cert",),
                 &req,
             )
             .await?;

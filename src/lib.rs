@@ -773,7 +773,7 @@ impl URLExt for url::Url {
     fn host_port(&self) -> std::result::Result<String, url::ParseError> {
         let host = self.host_str().ok_or(url::ParseError::EmptyHost)?;
         Ok(match (host, self.port()) {
-            (host, Some(port)) => format!("{}:{}", host, port),
+            (host, Some(port)) => format!("{host}:{port}"),
             (host, _) => host.to_string(),
         })
     }

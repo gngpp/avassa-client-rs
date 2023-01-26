@@ -202,7 +202,7 @@ impl<'a> Builder<'a> {
 
         tracing::debug!("Successfully connected consumer to topic {}", self.topic);
         let mut consumer = Consumer {
-            ws,
+            ws: Some(ws),
             options: self.options,
             last_seq_no: 0,
             last_remain: N_IN_AUTO_MORE,
@@ -242,7 +242,8 @@ pub struct MessageMetadata<T> {
 
 /// Volga Consumer
 pub struct Consumer {
-    ws: WebSocketStream,
+    // An option so we can take it and drop it.
+    ws: Option<WebSocketStream>,
     options: Options,
     last_seq_no: u64,
     // Last indicated remain when consuming, stored in case consume is cancelled.
@@ -260,11 +261,12 @@ impl Consumer {
         });
 
         tracing::trace!("{}", cmd);
-        self.ws
-            .send(WSMessage::Binary(serde_json::to_vec(&cmd)?))
-            .await?;
+        if let Some(ws) = self.ws.as_mut() {
+            ws.send(WSMessage::Binary(serde_json::to_vec(&cmd)?))
+                .await?;
 
-        self.last_remain = n;
+            self.last_remain = n;
+        }
 
         Ok(())
     }
@@ -279,28 +281,35 @@ impl Consumer {
             self.more(N_IN_AUTO_MORE).await?;
         }
 
-        let msg = super::get_binary_response(&mut self.ws).await?;
-        tracing::trace!("message: {}", String::from_utf8_lossy(&msg));
+        if let Some(ws) = self.ws.as_mut() {
+            let msg = super::get_binary_response(ws).await?;
+            tracing::trace!("message: {}", String::from_utf8_lossy(&msg));
 
-        let resp: MessageMetadata<T> = serde_json::from_slice(&msg)?;
-        self.last_seq_no = resp.seqno;
-        tracing::trace!("Metadata: {:?}", resp);
+            let resp: MessageMetadata<T> = serde_json::from_slice(&msg)?;
+            self.last_seq_no = resp.seqno;
+            tracing::trace!("Metadata: {:?}", resp);
 
-        self.last_remain = resp.remain;
-
-        Ok(resp)
+            self.last_remain = resp.remain;
+            Ok(resp)
+        } else {
+            Err(crate::Error::Volga(Some(
+                "No web socket available".to_string(),
+            )))
+        }
     }
 
+    /// Ack a received message
     pub async fn ack(&mut self, seqno: u64) -> Result<()> {
-        tracing::trace!("ack: {}", seqno);
-        let cmd = serde_json::json!({
-            "op": "ack",
-            "seqno": seqno,
-        });
+        if let Some(ws) = self.ws.as_mut() {
+            tracing::trace!("ack: {}", seqno);
+            let cmd = serde_json::json!({
+                "op": "ack",
+                "seqno": seqno,
+            });
 
-        self.ws
-            .send(WSMessage::Binary(serde_json::to_vec(&cmd)?))
-            .await?;
+            ws.send(WSMessage::Binary(serde_json::to_vec(&cmd)?))
+                .await?;
+        }
         Ok(())
     }
 
@@ -308,5 +317,15 @@ impl Consumer {
     #[must_use]
     pub const fn last_seq_no(&self) -> u64 {
         self.last_seq_no
+    }
+}
+
+impl Drop for Consumer {
+    fn drop(&mut self) {
+        if let Some(mut ws) = self.ws.take() {
+            tokio::spawn(async move {
+                let _res = ws.close(None).await;
+            });
+        }
     }
 }

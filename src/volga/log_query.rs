@@ -23,9 +23,9 @@ impl serde::ser::Serialize for Since {
         S: serde::ser::Serializer,
     {
         match self {
-            Self::Seconds(v) => serializer.serialize_str(&format!("{}s", v)),
-            Self::Minutes(v) => serializer.serialize_str(&format!("{}m", v)),
-            Self::Hours(v) => serializer.serialize_str(&format!("{}h", v)),
+            Self::Seconds(v) => serializer.serialize_str(&format!("{v}s")),
+            Self::Minutes(v) => serializer.serialize_str(&format!("{v}m")),
+            Self::Hours(v) => serializer.serialize_str(&format!("{v}h")),
         }
     }
 }
