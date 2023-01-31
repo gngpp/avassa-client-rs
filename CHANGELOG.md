@@ -1,4 +1,4 @@
-# 0.2.10
+# 0.2.11
 - Send web socket close frame on consumer drop
 - Fixed volga topic info parsing
 
