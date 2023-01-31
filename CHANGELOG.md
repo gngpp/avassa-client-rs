@@ -1,5 +1,6 @@
 # 0.2.10
 - Send web socket close frame on consumer drop
+- Fixed volga topic info parsing
 
 # 0.2.6
 - Added supd metrics deserialization
