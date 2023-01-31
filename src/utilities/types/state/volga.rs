@@ -22,7 +22,9 @@ pub struct Topic {
     #[serde(default)]
     pub chunkno: u64,
     /// Total number of chunks
-    pub number_of_chunks: u64,
+    pub number_of_chunks: Option<u64>,
+    /// Total number of chunks
+    pub max_size: Option<String>,
     /// Topic creation time
     pub creation_time: Option<chrono::DateTime<chrono::Local>>,
     /// Hosts topic is replicated to
@@ -38,8 +40,6 @@ pub struct Topic {
     pub current_replication_factor: usize,
     /// Persistence
     pub persistence: crate::volga::Persistence,
-    // /// Topic size
-    // pub size: Option<String>,
     /// Oldest entry timestamp
     pub oldest_entry: Option<chrono::DateTime<chrono::Local>>,
     /// Number of dropped chunks
