@@ -4,6 +4,7 @@
 /// CPU
 #[derive(Debug, Clone, serde::Deserialize)]
 #[serde(rename_all = "kebab-case")]
+#[non_exhaustive]
 pub struct CPU {
     pub vcpus: u64,
 }
@@ -11,6 +12,7 @@ pub struct CPU {
 /// Memory
 #[derive(Debug, Clone, serde::Deserialize)]
 #[serde(rename_all = "kebab-case")]
+#[non_exhaustive]
 pub struct Memory {
     pub total: u64,
     pub free: u64,
@@ -20,6 +22,7 @@ pub struct Memory {
 /// Load average
 #[derive(Debug, Clone, serde::Deserialize)]
 #[serde(rename_all = "kebab-case")]
+#[non_exhaustive]
 pub struct LoadAvg {
     /// 1 minute average
     pub avg1: f64,
@@ -36,6 +39,7 @@ pub struct LoadAvg {
 /// Disk
 #[derive(Debug, Clone, serde::Deserialize)]
 #[serde(rename_all = "kebab-case")]
+#[non_exhaustive]
 pub struct Disk {
     pub filesystem: String,
     #[serde(rename = "type")]
@@ -47,9 +51,35 @@ pub struct Disk {
     pub mount: String,
 }
 
+#[derive(Debug, Clone, serde::Deserialize)]
+#[serde(rename_all = "kebab-case")]
+#[non_exhaustive]
+pub struct CPUStats {
+    pub cpu: String,
+    #[serde(default)]
+    pub usr: f32,
+    #[serde(default)]
+    pub nice: f32,
+    #[serde(default)]
+    pub sys: f32,
+    #[serde(default)]
+    pub iowait: f32,
+    #[serde(default)]
+    pub irq: f32,
+    #[serde(default)]
+    pub soft: f32,
+    #[serde(default)]
+    pub steal: f32,
+    #[serde(default)]
+    pub guest: f32,
+    #[serde(default)]
+    pub idle: f32,
+}
+
 /// Matrics
 #[derive(Debug, Clone, serde::Deserialize)]
 #[serde(rename_all = "kebab-case")]
+#[non_exhaustive]
 pub struct Metrics {
     pub time: chrono::DateTime<chrono::Utc>,
     pub site: String,
@@ -58,4 +88,6 @@ pub struct Metrics {
     pub memory: Memory,
     pub loadavg: LoadAvg,
     pub disk: Vec<Disk>,
+    #[serde(default)]
+    pub cpus: Vec<CPUStats>,
 }

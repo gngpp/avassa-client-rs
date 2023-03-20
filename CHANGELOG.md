@@ -1,3 +1,6 @@
+# 0.3
+# Added MP stat metrics to host metrics
+
 # 0.2.11
 - Send web socket close frame on consumer drop
 - Fixed volga topic info parsing

@@ -4,6 +4,7 @@
 
 #[derive(Debug, Clone, serde::Deserialize)]
 #[serde(rename_all = "kebab-case")]
+#[non_exhaustive]
 pub struct Memory {
     pub used: u64,
     pub total: u64,
@@ -12,14 +13,17 @@ pub struct Memory {
 
 #[derive(Debug, Clone, serde::Deserialize)]
 #[serde(rename_all = "kebab-case")]
+#[non_exhaustive]
 pub struct CPU {
     pub nanoseconds: u64,
     pub cpus: f64,
     pub shares: u64,
+    pub percentage_used: f64,
 }
 
 #[derive(Debug, Clone, serde::Deserialize)]
 #[serde(rename_all = "kebab-case")]
+#[non_exhaustive]
 pub struct ContainerLayer {
     pub size: u64,
     pub used: u64,
@@ -30,6 +34,7 @@ pub struct ContainerLayer {
 /// Container metrics
 #[derive(Debug, Clone, serde::Deserialize)]
 #[serde(rename_all = "kebab-case")]
+#[non_exhaustive]
 pub struct ContainerMetric {
     /// Service instance name
     pub service_instance: String,
@@ -42,12 +47,13 @@ pub struct ContainerMetric {
     pub cpu: CPU,
 
     /// Container layer
-    pub container_layer: ContainerLayer,
+    pub container_layer: Option<ContainerLayer>,
 }
 
 /// Network metrics
 #[derive(Debug, Clone, serde::Deserialize)]
 #[serde(rename_all = "kebab-case")]
+#[non_exhaustive]
 pub struct GatewayNetwork {
     /// Packets sent
     pub tx_packets: Option<u64>,
@@ -62,6 +68,7 @@ pub struct GatewayNetwork {
 /// Appliction metrics
 #[derive(Debug, Clone, serde::Deserialize)]
 #[serde(rename_all = "kebab-case")]
+#[non_exhaustive]
 pub struct ApplicationMetric {
     /// Network metrics
     pub gateway_network: Option<GatewayNetwork>,
@@ -85,6 +92,7 @@ pub struct MetricEntry {
 
 /// Matrics
 #[derive(Debug, Clone, serde::Deserialize)]
+#[non_exhaustive]
 pub struct Metrics {
     /// Tenant name
     pub tenant: String,
