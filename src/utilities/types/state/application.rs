@@ -37,7 +37,7 @@ pub struct ServiceInstance {
     //     oper-status: completed
     pub containers: Vec<Container>,
 
-    pub ingress: Ingress,
+    pub ingress: Option<Ingress>,
 }
 
 /// Ingress information

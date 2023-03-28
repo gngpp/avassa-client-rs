@@ -1,6 +1,7 @@
 /// Application/container metrics
 #[derive(Debug, Clone, serde::Deserialize)]
 #[serde(rename_all = "kebab-case")]
+#[non_exhaustive]
 pub struct MetricEntry {
     /// Metric timestamp
     pub time: chrono::DateTime<chrono::Utc>,
@@ -20,13 +21,16 @@ pub struct MetricEntry {
 
 #[derive(Debug, Clone, serde::Deserialize)]
 #[serde(rename_all = "kebab-case")]
+#[non_exhaustive]
 pub struct CPU {
     pub nanoseconds: u64,
     pub cpus: f64,
+    pub percentage_used: f64,
 }
 
 #[derive(Debug, Clone, serde::Deserialize)]
 #[serde(rename_all = "kebab-case")]
+#[non_exhaustive]
 pub struct Memory {
     pub used: u64,
     pub total: u64,

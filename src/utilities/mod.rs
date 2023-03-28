@@ -85,4 +85,13 @@ pub mod state {
 
         Ok(app)
     }
+
+    pub async fn cluster_hosts(
+        client: &Client,
+    ) -> crate::Result<Vec<types::state::cluster_host::Host>> {
+        let c = client
+            .get_json("/v1/state/system/cluster/hosts", None)
+            .await?;
+        Ok(c)
+    }
 }
