@@ -84,6 +84,7 @@ pub struct Metrics {
     pub time: chrono::DateTime<chrono::Utc>,
     pub site: String,
     pub hostname: String,
+    pub cluster_hostname: String,
     pub cpu: CPU,
     pub memory: Memory,
     pub loadavg: LoadAvg,
