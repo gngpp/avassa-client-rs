@@ -10,7 +10,7 @@ pub mod log_query;
 pub mod producer;
 
 type WebSocketStream =
-    tokio_tungstenite::WebSocketStream<tokio_native_tls::TlsStream<tokio::net::TcpStream>>;
+    tokio_tungstenite::WebSocketStream<tokio_rustls::client::TlsStream<tokio::net::TcpStream>>;
 
 /// Volga stream persistence
 #[derive(Clone, Copy, Debug, Deserialize, Serialize, Eq, PartialEq)]

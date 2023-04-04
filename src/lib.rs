@@ -157,7 +157,11 @@ pub enum Error {
 
     /// TLS Errors
     #[error("TLS error {0}")]
-    TLS(#[from] tokio_native_tls::native_tls::Error),
+    TLS(#[from] tokio_rustls::rustls::Error),
+
+    /// DNSError
+    #[error("DNSName error {0}")]
+    DNSName(#[from] tokio_rustls::rustls::client::InvalidDnsNameError),
 
     /// IO Errors
     #[error("IO error {0}")]
@@ -213,8 +217,7 @@ struct ClientState {
 #[allow(clippy::struct_excessive_bools)]
 pub struct ClientBuilder {
     reqwest_ca: Vec<reqwest::Certificate>,
-    tls_ca: Vec<tokio_native_tls::native_tls::Certificate>,
-    disable_hostname_check: bool,
+    tls_ca: tokio_rustls::rustls::RootCertStore,
     disable_cert_verification: bool,
     connection_verbose: bool,
     auto_renew_token: bool,
@@ -225,12 +228,11 @@ pub struct ClientBuilder {
 impl ClientBuilder {
     /// Create a new builder instance
     #[must_use]
-    const fn new() -> Self {
+    fn new() -> Self {
         Self {
             reqwest_ca: Vec::new(),
-            tls_ca: Vec::new(),
+            tls_ca: tokio_rustls::rustls::RootCertStore::empty(),
             disable_cert_verification: false,
-            disable_hostname_check: false,
             connection_verbose: false,
             auto_renew_token: true,
             timeout: None,
@@ -258,10 +260,17 @@ impl ClientBuilder {
 
     /// Add a root certificate for API certificate verification
     pub fn add_root_certificate(mut self, cert: &[u8]) -> Result<Self> {
+        use std::iter;
         let r_ca = reqwest::Certificate::from_pem(cert)?;
-        let t_ca = tokio_native_tls::native_tls::Certificate::from_pem(cert)?;
+        let mut ca_reader = std::io::BufReader::new(cert);
+        for item in iter::from_fn(|| rustls_pemfile::read_one(&mut ca_reader).transpose()) {
+            if let rustls_pemfile::Item::X509Certificate(cert) = item? {
+                self.tls_ca.add(&tokio_rustls::rustls::Certificate(cert))?;
+            }
+        }
+        // let t_ca = tokio_native_tls::native_tls::Certificate::from_pem(cert)?;
         self.reqwest_ca.push(r_ca);
-        self.tls_ca.push(t_ca);
+        // self.tls_ca.push(t_ca);
         Ok(self)
     }
 
@@ -274,14 +283,6 @@ impl ClientBuilder {
         }
     }
 
-    /// Disable hostname verification
-    #[must_use]
-    pub fn danger_accept_invalid_hostnames(self) -> Self {
-        Self {
-            disable_hostname_check: true,
-            ..self
-        }
-    }
     /// Enabling this option will emit log messages at the TRACE level for read and write operations
     /// on the https client
     #[must_use]
@@ -357,8 +358,8 @@ pub struct Client {
     websocket_url: url::Url,
     state: std::sync::Arc<tokio::sync::Mutex<ClientState>>,
     client: reqwest::Client,
-    tls_ca: Vec<tokio_native_tls::native_tls::Certificate>,
-    disable_hostname_check: bool,
+    tls_ca: tokio_rustls::rustls::RootCertStore,
+    // tls_ca: Vec<tokio_rustls::rustls::Certificate>,
     disable_cert_verification: bool,
 }
 
@@ -369,7 +370,6 @@ impl std::fmt::Debug for Client {
             .field("websocket_url", &self.websocket_url)
             .field("state", &self.state)
             .field("client", &self.client)
-            .field("disable_hostname_check", &self.disable_hostname_check)
             .field("disable_cert_verification", &self.disable_cert_verification)
             .finish()
     }
@@ -378,7 +378,7 @@ impl std::fmt::Debug for Client {
 impl Client {
     /// Create a Client builder
     #[must_use]
-    pub const fn builder() -> ClientBuilder {
+    pub fn builder() -> ClientBuilder {
         ClientBuilder::new()
     }
 
@@ -484,7 +484,6 @@ impl Client {
             client,
             tls_ca: builder.tls_ca.clone(),
             disable_cert_verification: builder.disable_cert_verification,
-            disable_hostname_check: builder.disable_hostname_check,
             base_url,
             websocket_url,
             state,
@@ -732,22 +731,27 @@ impl Client {
     #[tracing::instrument(skip(self))]
     pub(crate) async fn open_tls_stream(
         &self,
-    ) -> Result<tokio_native_tls::TlsStream<tokio::net::TcpStream>> {
-        let mut connector = tokio_native_tls::native_tls::TlsConnector::builder();
+    ) -> Result<tokio_rustls::client::TlsStream<tokio::net::TcpStream>> {
+        let mut connector = tokio_rustls::rustls::ClientConfig::builder()
+            .with_safe_defaults()
+            .with_root_certificates(self.tls_ca.clone())
+            .with_no_client_auth();
 
-        self.tls_ca.iter().for_each(|ca| {
-            connector.add_root_certificate(ca.clone());
-        });
-        connector
-            .danger_accept_invalid_hostnames(self.disable_hostname_check)
-            .danger_accept_invalid_certs(self.disable_cert_verification);
-        let connector = connector.build()?;
-        let connector: tokio_native_tls::TlsConnector = connector.into();
+        if self.disable_cert_verification {
+            let mut danger = connector.dangerous();
+
+            danger.set_certificate_verifier(std::sync::Arc::new(CertificateVerifier));
+        }
+
+        let connector = std::sync::Arc::new(connector);
+
+        let connector: tokio_rustls::TlsConnector = connector.into();
         let addrs = self.websocket_url.socket_addrs(|| None)?;
         let stream = tokio::net::TcpStream::connect(&*addrs).await?;
-        let stream = connector
-            .connect(self.websocket_url.as_str(), stream)
-            .await?;
+
+        let server_name =
+            tokio_rustls::rustls::ServerName::try_from(self.websocket_url.host_str().unwrap())?;
+        let stream = connector.connect(server_name, stream).await?;
         Ok(stream)
     }
 
@@ -762,6 +766,29 @@ impl Client {
     /// Try to open a Strongbox Vault
     pub async fn open_strongbox_vault(&self, vault: &str) -> Result<strongbox::Vault> {
         strongbox::Vault::open(self, vault).await
+    }
+}
+
+struct CertificateVerifier;
+
+impl tokio_rustls::rustls::client::ServerCertVerifier for CertificateVerifier {
+    fn verify_server_cert(
+        &self,
+        _end_entity: &tokio_rustls::rustls::Certificate,
+        _intermediates: &[tokio_rustls::rustls::Certificate],
+        _server_name: &tokio_rustls::rustls::ServerName,
+        _scts: &mut dyn Iterator<Item = &[u8]>,
+        _ocsp_response: &[u8],
+        _now: std::time::SystemTime,
+    ) -> std::result::Result<
+        tokio_rustls::rustls::client::ServerCertVerified,
+        tokio_rustls::rustls::Error,
+    > {
+        // dbg! {end_entity};
+        // dbg! {intermediates};
+        // dbg! {server_name};
+        // panic!();
+        Ok(tokio_rustls::rustls::client::ServerCertVerified::assertion())
     }
 }
 
