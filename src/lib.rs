@@ -732,20 +732,20 @@ impl Client {
     pub(crate) async fn open_tls_stream(
         &self,
     ) -> Result<tokio_rustls::client::TlsStream<tokio::net::TcpStream>> {
-        let mut connector = tokio_rustls::rustls::ClientConfig::builder()
+        let mut client_config = tokio_rustls::rustls::ClientConfig::builder()
             .with_safe_defaults()
             .with_root_certificates(self.tls_ca.clone())
             .with_no_client_auth();
 
         if self.disable_cert_verification {
-            let mut danger = connector.dangerous();
+            let mut danger = client_config.dangerous();
 
             danger.set_certificate_verifier(std::sync::Arc::new(CertificateVerifier));
         }
 
-        let connector = std::sync::Arc::new(connector);
+        let client_config = std::sync::Arc::new(client_config);
 
-        let connector: tokio_rustls::TlsConnector = connector.into();
+        let connector: tokio_rustls::TlsConnector = client_config.into();
         let addrs = self.websocket_url.socket_addrs(|| None)?;
         let stream = tokio::net::TcpStream::connect(&*addrs).await?;
 
@@ -784,10 +784,6 @@ impl tokio_rustls::rustls::client::ServerCertVerifier for CertificateVerifier {
         tokio_rustls::rustls::client::ServerCertVerified,
         tokio_rustls::rustls::Error,
     > {
-        // dbg! {end_entity};
-        // dbg! {intermediates};
-        // dbg! {server_name};
-        // panic!();
         Ok(tokio_rustls::rustls::client::ServerCertVerified::assertion())
     }
 }
@@ -814,7 +810,7 @@ async fn renew_token_task(
     refresh_url: url::Url,
 ) {
     loop {
-        let now: chrono::DateTime<chrono::FixedOffset> = chrono::Local::now().into();
+        let now: chrono::DateTime<_> = chrono::Local::now().into();
         let sleep_time = next_renew_at - now;
 
         tracing::debug!("renew token in {sleep_time}");
