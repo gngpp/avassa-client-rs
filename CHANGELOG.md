@@ -1,3 +1,6 @@
+# 0.4.1
+Added custom alerts
+
 # 0.3
 # Added MP stat metrics to host metrics
 
