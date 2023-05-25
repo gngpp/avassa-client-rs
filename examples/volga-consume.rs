@@ -7,6 +7,7 @@ fn help() {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    tracing_subscriber::fmt::init();
     let mut args = std::env::args();
     // drop exec
     let _ = args.next();
@@ -28,7 +29,6 @@ async fn main() -> anyhow::Result<()> {
     };
     let builder = avassa_client::Client::builder()
         // Just for testing
-        .danger_accept_invalid_hostnames()
         .danger_accept_invalid_certs();
 
     let client = builder.login(&supd, &username, &password).await?;
