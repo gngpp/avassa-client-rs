@@ -133,8 +133,7 @@ async fn get_binary_response(ws: &mut WebSocketStream) -> Result<Vec<u8>> {
             }
             msg => {
                 return Err(Error::Volga(Some(format!(
-                    "Unexpected message type: '{}'",
-                    msg
+                    "Unexpected message type: '{msg}'",
                 ))))
             }
         }

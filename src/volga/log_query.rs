@@ -233,8 +233,7 @@ impl Stream for QueryStream {
                 let res: Option<Self::Item> = match val {
                     Some(Ok(WSMessage::Binary(m))) => Some(Ok(String::from_utf8_lossy(&m).into())),
                     Some(Ok(msg)) => Some(Err(crate::Error::Volga(Some(format!(
-                        "Unexpected message ({:?})",
-                        msg
+                        "Unexpected message ({msg:?})",
                     ))))),
                     Some(Err(e)) => Some(Err(e.into())),
                     None => None,
