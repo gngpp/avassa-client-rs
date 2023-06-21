@@ -1,3 +1,7 @@
+# 0.4.3
+Fixed volga consumer bug (position timestamp)
+Added struct for parsing audit trails
+
 # 0.4.1
 Added custom alerts
 
