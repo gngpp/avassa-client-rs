@@ -47,7 +47,8 @@ struct OpenConsumer<'a> {
     child_site: Option<&'a str>,
     topic: &'a str,
     name: &'a str,
-    position: &'a str,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    position: Option<&'a str>,
     #[serde(skip_serializing_if = "Option::is_none")]
     position_sequence_number: Option<u64>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -176,11 +177,11 @@ impl<'a> Builder<'a> {
             name: self.name,
             mode: self.options.mode,
             position: match self.options.position {
-                Position::SequenceNumber(_seqno) => "seqno",
-                Position::TimeStamp(_ts) => "timestamp",
-                Position::Beginning => "beginning",
-                Position::End => "end",
-                Position::Unread => "unread",
+                Position::SequenceNumber(_seqno) => None,
+                Position::TimeStamp(_ts) => None,
+                Position::Beginning => Some("beginning"),
+                Position::End => Some("end"),
+                Position::Unread => Some("unread"),
             },
             position_sequence_number: match self.options.position {
                 Position::SequenceNumber(seqno) => Some(seqno),
