@@ -276,7 +276,7 @@ impl ClientBuilder {
 
     /// Disable certificate verification
     #[must_use]
-    pub fn danger_accept_invalid_certs(self) -> Self {
+    pub fn danger_disable_cert_verification(self) -> Self {
         Self {
             disable_cert_verification: true,
             ..self

@@ -14,16 +14,14 @@ pub async fn login() -> crate::Result<crate::Client> {
         std::env::var("SUPD").map_err(|_| crate::Error::LoginFailureMissingEnv("SUPD".into()))?;
     tracing::info!("Connecting to api at address {}", supd);
 
-    let builder = crate::ClientBuilder::new()
-        // Just for testing
-        .danger_accept_invalid_hostnames();
+    let builder = crate::ClientBuilder::new();
 
     let ca_cert = std::env::var("SUPD_CA").map(|s| s.bytes().collect::<Vec<u8>>());
 
     let builder = if let Ok(ca) = ca_cert {
         builder.add_root_certificate(&ca)?
     } else {
-        builder.danger_accept_invalid_certs()
+        builder.danger_disable_cert_verification()
     };
 
     tracing::info!("Trying application login");

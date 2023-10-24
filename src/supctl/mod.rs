@@ -29,8 +29,7 @@ pub async fn login<P: AsRef<std::path::Path> + std::fmt::Debug>(
     let token: Token = serde_json::from_slice(&data)?;
 
     let client = crate::Client::builder()
-        .danger_accept_invalid_certs()
-        .danger_accept_invalid_hostnames();
+        .danger_disable_cert_verification();
 
     let client = match token_type {
         TokenType::Seal => client.disable_token_auto_renewal(),

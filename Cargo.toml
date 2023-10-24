@@ -23,14 +23,14 @@ bytesize = { version = "1", features = ["serde"] }
 chrono = { version = "0.4", features = ["serde"] }
 futures-util = "0.3"
 pin-project = "1"
-reqwest = { version = "0.11", default_features=false, features = ["json"] }
+reqwest = { version = "0.11", default_features=false, features = ["json", "rustls-tls-webpki-roots"] }
 rustls-pemfile = "1"
 serde = { version = "1", features=["derive"] }
 serde_json = { version = "1" }
 thiserror = "1"
 tokio = { version="1", features = ["sync", "time", "fs"] }
 tokio-rustls = { version = "0.24.0", features = ["dangerous_configuration"] }
-tokio-tungstenite = { version="0.18", default_features=false, features = ["rustls-tls-webpki-roots"] }
+tokio-tungstenite = { version="0.20", default_features=false, features = ["rustls-tls-webpki-roots"] }
 tracing = "0.1"
 tracing-futures="0.2"
 url = "2"
@@ -38,3 +38,4 @@ url = "2"
 [dev-dependencies]
 tokio = { version="1", features = ["full"] }
 anyhow = { version = "1" }
+tracing-subscriber = { version="0.2", features = ["env-filter"] }
