@@ -1,6 +1,11 @@
+//!
+//! Alert management
+//!
+
 #[derive(Clone, Copy, Debug, serde::Serialize)]
 #[serde(rename_all = "kebab-case")]
 #[non_exhaustive]
+/// Alert severity
 pub enum Severity {
     Warning,
     Minor,
@@ -8,6 +13,13 @@ pub enum Severity {
     Critical,
 }
 
+/// Generate a custom alert
+/// # Arguments
+/// * `client` - an Avassa Client
+/// * `id` - alert id
+/// * `name` - alert name
+/// * `description` - alert description
+/// * `severity` - alert severity
 pub async fn alert(
     client: &crate::Client,
     id: &str,
@@ -26,6 +38,11 @@ pub async fn alert(
     Ok(())
 }
 
+/// Clear a custom alert
+/// # Arguments
+/// * `client` - an Avassa Client
+/// * `id` - alert id
+/// * `name` - alert name
 pub async fn clear_alert(client: &crate::Client, id: &str, name: &str) -> crate::Result<()> {
     let clear = serde_json::json!({
         "id": id,
