@@ -17,6 +17,7 @@ pub struct ApplicationDeployment {
 #[serde(rename_all = "kebab-case")]
 pub struct Status {
     pub oper_status: String,
+    #[serde(default)]
     pub application_versions: Vec<ApplicationVersion>,
 }
 
