@@ -113,6 +113,7 @@ pub struct RESTErrorList {
 
 /// Error returned by client functions
 #[derive(Debug, thiserror::Error)]
+#[non_exhaustive]
 pub enum Error {
     /// Login failed
     #[error("Login failed: {0}")]
