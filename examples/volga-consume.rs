@@ -29,7 +29,7 @@ async fn main() -> anyhow::Result<()> {
     };
     let builder = avassa_client::Client::builder()
         // Just for testing
-        .danger_accept_invalid_certs();
+        .danger_disable_cert_verification();
 
     let client = builder.login(&supd, &username, &password).await?;
 
